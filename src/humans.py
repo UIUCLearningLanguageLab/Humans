@@ -27,24 +27,27 @@ class Human:
         return best_action, prob
 
 
-# given calculations of expectation about actions satisfying drives, choose an action
-'''
-while tiredness < hunger:
+    def take_action(self):
+        pass
 
-    if food is stored:
-        go to the food
-        if the food is not butchered
-            butcher the food
-        cook the food
-        eat the food
+        # given calculations of expectation about actions satisfying drives, choose an action
+        '''
+        while tiredness < hunger:
         
-    else:
-        while animal not found
-            search for animal
-            
-        if "good chance of kill":
-            pick appropriate method
-            follow steps to trap, chase, 
+            if food is stored:
+                go to the food
+                if the food is not butchered
+                    butcher the food
+                cook the food
+                eat the food
+                
+            else:
+                while animal not found
+                    search for animal
+                    
+                if "good chance of kill":
+                    pick appropriate method
+                    follow steps to trap, chase, 
             
 
 
