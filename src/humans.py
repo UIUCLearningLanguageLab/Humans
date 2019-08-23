@@ -1,7 +1,13 @@
+import random
+from src import config
+
 
 class Human:
 
     def __init__(self):
+
+        self.x = random.randint(config.World.tile_size, config.World.world_size - config.World.tile_size)
+        self.y = random.randint(config.World.tile_size, config.World.world_size - config.World.tile_size)
 
         self.id_number = None
         self.name = None
@@ -16,6 +22,13 @@ class Human:
         self.strength = None
         self.intelligence = None
 
+    def take_turn(self):
+        x_delta = random.randint(-10, 10)
+        y_delta = random.randint(-10, 10)
+        if config.World.tile_size < self.x + x_delta < config.World.world_size-config.World.tile_size:
+            self.x += x_delta
+        if config.World.tile_size < self.y + y_delta < config.World.world_size-config.World.tile_size:
+            self.y += y_delta
 
     def get_hunt_success_probs(self, animal):
         best_action = None
@@ -26,12 +39,8 @@ class Human:
         trap_prob = 0
         return best_action, prob
 
-
-    def take_action(self):
-        pass
-
-        # given calculations of expectation about actions satisfying drives, choose an action
-        '''
+# given calculations of expectation about actions satisfying drives, choose an action
+'''
         while tiredness < hunger:
         
             if food is stored:
@@ -49,14 +58,9 @@ class Human:
                     pick appropriate method
                     follow steps to trap, chase, 
             
-
-
-
 '''
 # what is the high level goal (sleep, eat)
 # if sleep, do the sleep steps
 # if eat, is there gathered food available
-
-
 
 # within those, what are specific goal (eat

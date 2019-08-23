@@ -1,23 +1,20 @@
+import random
+from src import config
 
 
 class World:
 
     def __init__(self):
-        running = False
         self.human_list = []
-        self.animal_list = []
+        self.create_humans()
 
-        while running:
-            for human in self.human_list:
-                human.take_action()
-            for animal in self.animal_list:
-                animal.take_action()
+    def create_humans(self):
+        for i in range(config.World.num_humans):
+            self.human_list.append(Human())
 
-        # some humans
-
-
-        # some animals
-
+    def next_turn(self):
+        for human in self.human_list:
+            human.take_turn()
 
         # hunt
         #   location: where animal is
