@@ -17,12 +17,18 @@ class Human:
         self.energy = None
         self.health = None
         self.max_speed = None
+        self.awake = True
         self.age = None
         self.size = None
         self.strength = None
         self.intelligence = None
+        self.food_threshold = None
+        self.carry_threshold = None
+        self.sleep_threshold = None
+        self.hunger_threshold = None
 
         self.world = world
+
 
     def take_turn(self):
         x_delta =  random.randint(-10, 10)
@@ -42,21 +48,22 @@ class Human:
         trap_prob = 0
         return best_action, prob
 
+    def stay(self):
+        raise NotImplementedError
+
     def go_to(self,location):
         raise NotImplementedError
 
-
-    def check_food(self,):
+    def check_food(self):
         food_amount = 0
 
-        self.world.food_list
+        food_list = self.world.food_list
+
 
         return food_amount
 
-
     def butcher(self,food):
         raise NotImplementedError
-
 
     def cook(self,food):
         raise NotImplementedError
@@ -146,7 +153,7 @@ class Human:
             else:
                 # fisrt go check how much food left, no matter hungry or not
                 self.go_to('fridge')
-                food_amount = self.check_food(self.world.food_list)
+                food_amount = self.check_food()
                 if food_amount >= self.food_threshold:
 
                     # in the case that food is enough(below the threshold), do cooking-eating sequence if hungry
@@ -184,8 +191,8 @@ class Human:
                         animal_processed = []
                         # do the search-go-kill-(butcher)-carry sequence until goal met
                         while energy_gain < hunt_goal:
-                            animal_found = 0
-                            while animal_found == 0:
+                            animal_found = []
+                            while len(animal_found) == 0:
                                 animal_found = self.search()
                             method = self.choose_killing_method(animal_found)
                             animal = animal_found[1]
