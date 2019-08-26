@@ -4,3 +4,4 @@ class World:
     num_tiles = 50
     world_size = tile_size * num_tiles
     num_humans = 3
+    num_animals = 6

@@ -4,7 +4,7 @@ from src import config
 
 class Human:
 
-    def __init__(self):
+    def __init__(self, world):
 
         self.x = random.randint(config.World.tile_size, config.World.world_size - config.World.tile_size)
         self.y = random.randint(config.World.tile_size, config.World.world_size - config.World.tile_size)
@@ -21,6 +21,8 @@ class Human:
         self.size = None
         self.strength = None
         self.intelligence = None
+
+        self.world = world
 
     def take_turn(self):
         x_delta =  random.randint(-10, 10)
@@ -41,21 +43,29 @@ class Human:
         return best_action, prob
 
     def go_to(self,location):
+        raise NotImplementedError
 
-    def check_food(self,food_list):
+
+    def check_food(self,):
         food_amount = 0
+
+        self.world.food_list
 
         return food_amount
 
 
     def butcher(self,food):
+        raise NotImplementedError
 
 
     def cook(self,food):
+        raise NotImplementedError
 
     def eat(self,food):
+        raise NotImplementedError
 
     def sleep(self):
+        raise NotImplementedError
 
 
     # decide what to eat based on the extent of hunger and what is there in the fridge,
@@ -105,20 +115,24 @@ class Human:
 
 
     def choose_killing_method(self, animal_found):
+        raise NotImplementedError
 
 
     def kill(self, animal, method):
+        raise NotImplementedError
 
 
     def carry_to_fridge(self, animal_found):
+        raise NotImplementedError
 
     def get_up(self):
+        raise NotImplementedError
 
 
 
 
     def take_action(self):
-        pass
+
 
         # given calculations of expectation about actions satisfying drives, choose an action
         if self.awake:
@@ -131,9 +145,9 @@ class Human:
 
             else:
                 # fisrt go check how much food left, no matter hungry or not
-                self.go_to(Fridge)
-                food_amount = self.check_food(food_list)
-                if food_amount >= food_threshold:
+                self.go_to('fridge')
+                food_amount = self.check_food(self.world.food_list)
+                if food_amount >= self.food_threshold:
 
                     # in the case that food is enough(below the threshold), do cooking-eating sequence if hungry
                     # do nothing if not
@@ -165,7 +179,7 @@ class Human:
                     # If not hungry, then go out and get food (hunt)
                     else:
                         energy_gain = 0
-                        hunt_goal = food_threshold - food_amount
+                        hunt_goal = self.food_threshold - food_amount
                         animal_killed = []
                         animal_processed = []
                         # do the search-go-kill-(butcher)-carry sequence until goal met
@@ -190,7 +204,7 @@ class Human:
 
                         # update the food storage
                         for animal in animal_processed:
-                            food_list.append(animal)
+                            self.world.food_list.append(animal)
 
 
 

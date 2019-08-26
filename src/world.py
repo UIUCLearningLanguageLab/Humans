@@ -1,22 +1,26 @@
 import random
 from src import config
+from src.humans import Human
+from src.animals import Animal
 
 
 class World:
 
     def __init__(self):
         self.human_list = []
-        self.create_humans()
         self.animal_list = []
-        self.create_animals()
         self.food_list = []
         self.food_threshold = None
         self.hunting_method_list = []
-        self.location_list = []
+        self.location_list = ['fridge','hut','fire']
         
     def create_humans(self):
         for i in range(config.World.num_humans):
-            self.human_list.append(Human())
+            self.human_list.append(Human(self))
+
+    def create_animals(self):
+        for i in range(config.World.num_animals):
+            self.animal_list.append(Animal(self))
 
     def next_turn(self):
         for human in self.human_list:
@@ -33,4 +37,5 @@ class World:
         # sleep
         #   location: hut
         #   instruments: blanket
+
 
