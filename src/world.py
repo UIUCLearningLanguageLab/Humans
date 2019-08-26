@@ -7,7 +7,13 @@ class World:
     def __init__(self):
         self.human_list = []
         self.create_humans()
-
+        self.animal_list = []
+        self.create_animals()
+        self.food_list = []
+        self.food_threshold = None
+        self.hunting_method_list = []
+        self.location_list = []
+        
     def create_humans(self):
         for i in range(config.World.num_humans):
             self.human_list.append(Human())
