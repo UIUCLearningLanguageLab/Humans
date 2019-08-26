@@ -1,6 +1,6 @@
 class Animal:
 
-    def __init__(self,world):
+    def __init__(self, world):
         self.id_number = None
         self.category = None
         self.size = None

@@ -1,6 +1,6 @@
 import random
 from src import config
-from src.humans import Human
+from src.human import Human
 from src.animals import Animal
 
 
@@ -25,6 +25,9 @@ class World:
     def next_turn(self):
         for human in self.human_list:
             human.take_turn()
+
+        for animal in self.animal_list:
+            animal.take_turn()
 
         # hunt
         #   location: where animal is
