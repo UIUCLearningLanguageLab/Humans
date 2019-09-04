@@ -19,19 +19,26 @@ for leave in leaves:
     code = leave[1]
     if depth < len(code):
         depth = len(code)
-    tree[code] = (leave[0],1)
+    tree[code] = [leave[0],1]
     l = len(code)
     for i in range(l-1,0,-1):
         parent_code = code[:i]
         child_code = code[:i+1]
         if parent_code not in tree:
             if parent_code in parallel:
-                tree[parent_code] = ('p',1)
+                tree[parent_code] = ['p',1]
             else:
-                tree[parent_code] = ('s',1)
+                tree[parent_code] = ['s',1]
             T.add_edge(parent_code, child_code)
         else:
             T.add_edge(parent_code, child_code)
             break
+
+for node in T:
+    if T.out_degree(node) > 0 and tree[node][0] == 's':
+        tree[node][1] = len([n for n in T.neighbors(node)])
+        print('1')
+
+print(tree)
 nx.draw(T, with_labels=True)
 plt.show()
