@@ -11,7 +11,6 @@ for line in f:
         line_list.append(item)
 parallel = line_list[0]
 leaves = line_list[1:]
-print(type(leaves[0]))
 tree = {}
 depth = 0
 T = nx.DiGraph()
@@ -21,7 +20,7 @@ for leave in leaves:
         depth = len(code)
     tree[code] = [leave[0],1]
     l = len(code)
-    for i in range(l-1,0,-1):
+    for i in range(l-1,-1,-1):
         parent_code = code[:i]
         child_code = code[:i+1]
         if parent_code not in tree:
@@ -37,7 +36,6 @@ for leave in leaves:
 for node in T:
     if T.out_degree(node) > 0 and tree[node][0] == 's':
         tree[node][1] = len([n for n in T.neighbors(node)])
-        print('1')
 
 print(tree)
 nx.draw(T, with_labels=True)
