@@ -2,6 +2,8 @@ import random
 from src import config
 import operator
 import stats
+from src import event_tree as et
+
 
 class Human:
 
@@ -15,7 +17,6 @@ class Human:
 
         self.hunger = None
         self.sleepiness = None
-
 
         self.fatigue = None
         self.energy = None
@@ -33,35 +34,48 @@ class Human:
         self.hunger_threshold = None
 
         self.world = world
+        self.event_dict, self.event_tree = et.initialize_event_tree('event_tree.txt')
 
         self.drive_dict = {'hunger': 0, 'sleepiness': 0}
         self.drive_values = [0, 0]
 
         self.current_drive = ['hunger', 'hunt_deer', 'shoot']
+        self.current_event = None
 
-        #action_dict = {'hunt_deer': [A, B, C, D]}
-
+        # action_dict = {'hunt_deer': [A, B, C, D]}
 
     def take_turn(self):
+        self.compute_status()
 
-        if self.drive_dict[self.current_drive] < max(stats.items(), key=operator.itemgetter(1))[0]:
-            self.current_drive = max(stats.items(), key=operator.itemgetter(1))[0]
+    def compute_status(self):
+        T = self.event_tree
+        current_dict = self.event_dict
 
+        if current_dict[self.current_event][0] == "s":
+            score = 0
+            for event in T.neighbors(self.current_event):
+                if dict[event][1] > 0:
+                    score = score + 1
+            self.event_dict[self.current_event][1] = score
+
+        elif current_dict[self.current_event][0] == 'p':
+            for event in T.neighbors(self.current_event):
+                if dict[event][1] == 0:
+                    self.event_dict[self.current_event][1] = 0
+                    break
 
     def move(self):
         x_delta = random.randint(-10, 10)
         y_delta = random.randint(-10, 10)
-        if config.World.tile_size < self.x + x_delta < config.World.world_size-config.World.tile_size:
+        if config.World.tile_size < self.x + x_delta < config.World.world_size - config.World.tile_size:
             self.x += x_delta
-        if config.World.tile_size < self.y + y_delta < config.World.world_size-config.World.tile_size:
+        if config.World.tile_size < self.y + y_delta < config.World.world_size - config.World.tile_size:
             self.y += y_delta
-
-
 
     def search(self):
         raise NotImplementedError
 
-    def go_to(self,location):
+    def go_to(self, location):
         raise NotImplementedError
 
     def choose_killing_method(self, animal_found):
@@ -75,7 +89,6 @@ class Human:
         throw_prob = 0
         trap_prob = 0
         return best_action, prob
-
 
     def trap(self, animal):
         raise NotImplementedError
@@ -95,10 +108,8 @@ class Human:
     def throw_at(self, animal):
         raise NotImplementedError
 
-
     def gather(self, animal):
         raise NotImplementedError
-
 
     def butcher(self, food):
         raise NotImplementedError
@@ -108,8 +119,6 @@ class Human:
 
     def eat(self, food):
         raise NotImplementedError
-
-
 
     def lay_down(self):
         raise NotImplementedError
@@ -123,17 +132,9 @@ class Human:
     def get_up(self):
         raise NotImplementedError
 
-
-
-
-
-
-
-            
 # what is the high level goal (sleep, eat)
 # if sleep, do the sleep steps
 # if eat, is there gathered food available
-
 
 
 # within those, what are specific goal (eat
