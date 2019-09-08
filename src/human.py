@@ -1,4 +1,4 @@
-import random
+import random 
 from src import config
 import operator
 import stats
@@ -45,22 +45,54 @@ class Human:
         # action_dict = {'hunt_deer': [A, B, C, D]}
 
     def take_turn(self):
+        t = self.event_tree
         self.compute_status()
+        status = self.event_dict[self.current_event][1]
+
+        if t.out_degree(self.current_event) == 0:  # currently on leave
+            if status == 1:  # specific event functions to write
+                print(self.event_dict[self.current_event][0])
+            else:
+                self.current_event = self.current_event[len(self.current_event)-1]
+
+        elif t.in_degree(self.current_event) != 0:  # currently on branch
+            if status == 0:
+                self.current_event = self.current_event[len(self.current_event)-1]
+            else:
+                self.current_event = self.choose_heir()
+
+        else:  # currently on the root
+            if status == 0:
+                self.event_dict, self.event_tree = et.initialize_event_tree('event_tree,txt')
+            else:
+                self.current_event = self.choose_heir()
+
+    def choose_heir(self):
+        t = self.event_tree
+        event_type = self.event_dict[self.current_event][0]
+        num = len([n for n in t.neighbors(self.current_event)])
+        if event_type == 's':
+            index = num - self.event_dict[self.current_event][1]
+            self.current_event = self.current_event + (index,)
+        else:  # choice function to write
+            choice = random.randint(0, num - 1)
+            self.current_event = self.current_event + (choice,)
+        return self.current_event
 
     def compute_status(self):
-        T = self.event_tree
+        t = self.event_tree
         current_dict = self.event_dict
 
         if current_dict[self.current_event][0] == "s":
             score = 0
-            for event in T.neighbors(self.current_event):
-                if dict[event][1] > 0:
+            for event in t.neighbors(self.current_event):
+                if current_dict[event][1] > 0:
                     score = score + 1
             self.event_dict[self.current_event][1] = score
 
         elif current_dict[self.current_event][0] == 'p':
-            for event in T.neighbors(self.current_event):
-                if dict[event][1] == 0:
+            for event in t.neighbors(self.current_event):
+                if current_dict[event][1] == 0:
                     self.event_dict[self.current_event][1] = 0
                     break
 
