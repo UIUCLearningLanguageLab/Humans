@@ -9,10 +9,10 @@ state change as sc: change of state of human, animal and world.
 simple event function
 
 
-trap, catch, chase, stab, shoot, throw : rs, sc, switch
-go_to: move, sc, switch
-search: move, cs, sc, switch
-null, gather, butcher, cook, eat, lay_down, fall_asleep, wake_up, get_up: sc, switch
+f1 trap, catch, chase, stab, shoot, throw : rs, sc, switch
+f2 go_to: move, sc, switch
+f3 search: move, cs, sc, switch
+f4 null, gather, butcher, cook, eat, lay_down, fall_asleep, wake_up, get_up: sc, switch
 
 All simple event has following attributes: state change, event-finish criterion(switching criterion), and some has
 random sampling distribution.
