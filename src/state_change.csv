@@ -1,0 +1,18 @@
+function\state, hunger, sleepiness, food
+trap,
+chase,
+shoot,
+catch,
+throw,
+stab,
+go_to,
+search,
+null,
+gather,
+butcher,
+cook,
+eat,
+lay_down,
+fall_asleep,
+wake_up,
+get_up
