@@ -70,14 +70,33 @@ class Human:
     def choose_heir(self):
         t = self.event_tree
         event_type = self.event_dict[self.current_event][0]
-        num = len([n for n in t.neighbors(self.current_event)])
+        children = [n for n in t.neighbors(self.current_event)]
+        num = len(children)
         if event_type == 's':
             index = num - self.event_dict[self.current_event][1]
             self.current_event = self.current_event + (index,)
         else:  # choice function to write
-            choice = random.randint(0, num - 1)
-            self.current_event = self.current_event + (choice,)
+            scores = []
+            for child in children:
+                score = self.compute_scores(child)
+                scores.append(score)
+            self.current_event = self.make_decision(scores)
         return self.current_event
+
+    def compute_scores(self,event):
+        if self.current_event == ():
+            score = 1
+        elif self.current_event == (0,0):
+            score = 2
+        elif self.current_event == (0,0,0,1):
+            score = 3
+        else:
+            score = 4
+        return score
+
+    def make_decision(self,event,scores):
+        return self.current_event
+
 
     def compute_status(self):
         t = self.event_tree
