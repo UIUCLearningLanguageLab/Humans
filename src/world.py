@@ -7,12 +7,20 @@ from src.animals import Animal
 class World:
 
     def __init__(self):
+        self.simple_event_dict = {'search': 1, 'go_to': 1, 'trap': 2, 'catch': 2, 'chase': 2, 'stab': 2, 'shoot': 2,
+                                  'throw_at': 2, 'gather': 2, 'butcher': 2, 'cook': 2, 'eat': 2, 'lay_down': 1,
+                                  'asleep': 1, 'wake_up': 1, 'get_up': 1}
         self.human_list = []
+        self.animal_category = ['rabbit', 'squirrel', 'fox', 'mouflon', 'deer', 'boar', 'ibex', 'bison', 'mammoth',
+                                'auroch']
+        self.animal_size = {'rabbit':(3,5), 'squirrel':(1,2), 'fox':(9,19), 'mouflon':(50,100), 'deer':(180,260),
+                            'boar':(88,110), 'ibex':(80,150), 'bison':(1800,2200), 'mammoth':(8000,10000),
+                                'auroch':(1000,2000)}
         self.animal_list = []
         self.food_list = []
-        self.food_threshold = None
+        self.food_stored = None
         self.hunting_method_list = []
-        self.location_list = ['fridge','hut','fire']
+        self.location_list = ['fridge', 'hut', 'fire']
         
     def create_humans(self):
         for i in range(config.World.num_humans):
