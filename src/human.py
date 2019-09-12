@@ -20,6 +20,8 @@ class Human:
         self.hunger = None
         self.sleepiness = None
 
+        self.speed = None
+        self.vision = None
         self.fatigue = None
         self.energy = None
         self.health = None
@@ -36,9 +38,8 @@ class Human:
         self.focus = None
         self.event_dict, self.event_tree = et.initialize_event_tree('event_tree.txt')
         self.hunting_method = self.get_hunting_method()
+        self.state_change = self.get_state_change()
 
-        self.drive_dict = {'hunger': 0, 'sleepiness': 0}
-        self.drive_values = [0, 0]
 
         self.current_drive = ['hunger', 'hunt_deer', 'shoot']
         self.current_event = None
@@ -76,6 +77,21 @@ class Human:
                     line = line + 1
         return hunting_skill, length
 
+    def get_state_change(self):
+        state_change = {}
+        with open('state_change.csv') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            line = 0
+            for row in csv_reader:
+                if line > 0:
+                    copy = []
+                    for item in row[1:]:
+                        copy.append(eval(item))
+                    state_change[row[0]] = np.asarray(copy)
+                    line = line + 1
+        return state_change
+
+
     def take_turn(self):
         t = self.event_tree
         self.compute_status()
@@ -88,7 +104,7 @@ class Human:
                     self.search()
                 elif event_name == 'go_to':
                     self.go_to()
-                elif event_name  in {'gather', 'butcher', 'cook', 'eat', 'lay_down', 'asleep', 'wake_up', 'get_up'}:
+                elif event_name in {'gather', 'butcher', 'cook', 'eat', 'lay_down', 'asleep', 'wake_up', 'get_up'}:
                     self.do_it()
                 else:
                     self.hunt()
@@ -134,9 +150,9 @@ class Human:
                 score = self.sleepiness
         elif self.current_event == (0, 0):
             if event == (0, 0, 0):
-                score = -self.world.food_stored
+                score = self.hunger
             else:
-                score = 0
+                score = self.world.food_stored
         else:
             index = self.world.animal_category.index(self.focus)
             score = self.hunting_method[event][index]
@@ -169,37 +185,90 @@ class Human:
             self.y += y_delta
 
     def search(self):
-        raise NotImplementedError
+        region = random.choice(['east', 'west', 'north', 'south'])
+        game_list = []
+        original_position = (self.x, self.y)
+        if region == 'east':
+            for animal in self.world.animal_list:
+                if animal.x > abs(animal.y):
+                    game_list.append(animal)
+            self.x = config.World.world_size/4
+            self.y = 0
+        elif region == 'west':
+            for animal in self.world.animal_list:
+                if -animal.x > abs(animal.y):
+                    game_list.append(animal)
+            self.x = -config.World.world_size / 4
+            self.y = 0
+        elif region == 'north':
+            for animal in self.world.animal_list:
+                if animal.y > abs(animal.x):
+                    game_list.append(animal)
+            self.y = config.World.world_size / 4
+            self.x = 0
+        else:
+            for animal in self.world.animal_list:
+                if -animal.y > abs(animal.x):
+                    game_list.append(animal)
+            self.y = -config.World.world_size / 4
+            self.x = 0
+        movement = ((self.x - original_position[0])**2 + (self.y - original_position[1])**2)**0.5
 
-    def go_to(self, location):
-        raise NotImplementedError
+        if len(game_list) > 0:
+            choice = game_list[0]
+            d_min = (choice.x - self.x)**2 + (choice.y - self.y)**2
+            for game in game_list[1:]:
+                d = (game.x - self.x)**2 + (game.y - self.y)**2
+                if d < d_min:
+                    choice = game
+                    d_min = d
+            self.focus = choice
+            self.event_dict[self.current_event][1] = 0
+        self.hunger = self.hunger + movement * self.state_change['search'][0]
+
+    def go_to(self):
+        dx = self.x - self.focus.x
+        dy = self.y - self.focus.y
+        norm = (dx ** 2 + dy ** 2) ** 0.5
+        dx = dx / norm
+        dy = dy / norm
+        self.x = self.x + dx * self.speed
+        self.y = self.y + dy * self.speed
+        d = ((self.x - self.focus.x)**2 + (self.y - self.focus.y)**2)**0.5
+        if d < self.vision:
+            self.event_dict[self.current_event][1] = 0
+        self.hunger = self.hunger + self.speed * self.state_change['go_to'][0]
 
     def hunt(self):
-        print('hunt')
+        event_name = self.event_dict[self.current_event][0]
+        hunting_skill = self.get_hunting_skill()[0]
+        index = self.world.animal_category.index(self.focus.category)
+        success_rate = hunting_skill[event_name][index]
+        num = np.random.choice(2, 1, p=[1-success_rate, success_rate])
+        if num == 1:
+            self.event_dict[self.current_event][1] = 0
+        self.hunger = self.hunger + self.state_change[event_name][0]
 
     def do_it(self):
-        print('do_it')
+        event_name = self.current_event[self.current_event][0]
 
-    def choose_killing_method(self, animal_found):
-        raise NotImplementedError
+        if event_name == 'butcher':
+            if self.focus:
+                self.world.food_stored = self.world.food_stored + self.focus.size
+                self.hunger = self.hunger + self.state_change[event_name][0]* self.focus.size
+                self.sleepiness = self.sleepiness + self.state_change[event_name][1]
 
-    def trap(self, animal):
-        raise NotImplementedError
+            self.focus = None
 
-    def catch(self, animal):
-        raise NotImplementedError
 
-    def chase(self, animal):
-        raise NotImplementedError
+        if event_name == 'eat':
+            self.food_stored = self.food_stored
+            self.sleepiness = self.sleepiness + self.hunger
+            self.hunger = 0
 
-    def stab(self, animal):
-        raise NotImplementedError
 
-    def shoot(self, animal):
-        raise NotImplementedError
-
-    def throw_at(self, animal):
-        raise NotImplementedError
+        self.hunger = self.hunger + self.state_change[event_name][0]
+        self.sleepiness = self.sleepiness + self.state_change[event_name][1]
 
     def gather(self, animal):
         raise NotImplementedError
