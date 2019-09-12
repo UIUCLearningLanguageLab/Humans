@@ -1,4 +1,5 @@
 import random
+from src import config
 
 
 class Animal:
@@ -8,7 +9,29 @@ class Animal:
         self.id_number = len(self.world.animal_list)
         self.category = random.choice(self.world.animal_category)
         self.size = random.randint(self.world.animal_size[self.category][0], self.world.animal_size[self.category][1])
-        self.location = None
+        self.x = random.randint(-config.World.world_size/2, config.World.world_size/2)
+        self.y = random.randint(-config.World.world_size/2, config.World.world_size/2)
+        self.speed = None
+        self.vision = None
+
+    def take_turn(self):
+        for human in self.world.human_list:
+            d = (human.x - self.x)**2 + (human.y - self.y)**2
+            if d < self.vision:
+                self.run(human)
+                break
+
+    def run(self, human):
+        dx = self.x - human.x
+        dy = self.y - human.y
+        norm = (dx**2+dy**2)**0.5
+        dx = dx/norm
+        dy = dy/norm
+        self.x = self.x + dx*self.speed
+        self.y = self.y + dy*self.speed
+
+
+
 
 
 
