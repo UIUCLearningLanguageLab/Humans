@@ -11,7 +11,7 @@ null,1,0
 gather,0.1,0
 butcher,0.2,0
 cook,1,0
-eat,-1,1
+eat,0,1
 lay_down,0,0
 asleep,1,-1
 wake_up,0,0
