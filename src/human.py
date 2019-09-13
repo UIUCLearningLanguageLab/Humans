@@ -44,6 +44,9 @@ class Human:
         self.current_drive = ['hunger', 'hunt_deer', 'shoot']
         self.current_event = None
 
+        self.dish_list = []
+        self.dish_amount = 0
+
         # action_dict = {'hunt_deer': [A, B, C, D]}
 
     def get_hunting_method(self):
@@ -250,36 +253,55 @@ class Human:
         self.hunger = self.hunger + self.state_change[event_name][0]
 
     def do_it(self):
-        event_name = self.current_event[self.current_event][0]
+        event_name = self.event_dict[self.current_event][0]
 
         if event_name == 'butcher':
-            if self.focus:
-                self.world.food_stored = self.world.food_stored + self.focus.size
-                self.hunger = self.hunger + self.state_change[event_name][0]* self.focus.size
-                self.sleepiness = self.sleepiness + self.state_change[event_name][1]
+            self.world.food_stored = self.world.food_stored + self.focus.size
+            self.hunger = self.hunger + self.state_change[event_name][0]* self.focus.size
+            self.sleepiness = self.sleepiness + self.state_change[event_name][1]
+            self.focus = None
+            self.hunger = self.hunger + self.state_change[event_name][0]
+            self.event_dict[self.current_event][1] = 0
 
+        if event_name == 'cook':
+            amount_need = self.hunger - self.dish_amount
+            self.focus = self.world.food_list[0]
+            max_size = self.focus.size
+            for food in self.world.food_list:
+                if food.size > max_size:
+                    self.focus = food
+                    if food.size > amount_need:
+                        break
+            if self.focus.size >= amount_need:
+                self.focus.size = self.focus.size - amount_need
+                self.dish_amount = self.hunger
+                self.world.food_stored = self.world.food_stored - amount_need
+                self.event_dict[self.current_event][1] = 0
+
+            else:
+                self.dish_amount = self.dish_amount + self.focus.size
+                self.world.food_stored = self.world.food_stored - self.focus.size
+                self.world.food_list.remove(self.focus)
+                if len(self.world.food_list) == 0:
+                    self.event_dict[self.current_event][1] = 0
+
+            self.dish_list.append(self.focus.category)
+            if self.event_dict[self.current_event][1] == 0:
+                dish_set = set(self.dish_list)
+                self.dish_list = list(dish_set)
             self.focus = None
 
-
         if event_name == 'eat':
-            self.food_stored = self.food_stored
-            self.sleepiness = self.sleepiness + self.hunger
-            self.hunger = 0
-
+            self.focus = self.dish_list.pop()
+            if len(self.dish_list) == 0:
+                self.hunger = self.hunger - self.dish_amount
+                self.event_dict[self.current_event][1] = 0
+            self.focus = None
 
         self.hunger = self.hunger + self.state_change[event_name][0]
         self.sleepiness = self.sleepiness + self.state_change[event_name][1]
 
     def gather(self, animal):
-        raise NotImplementedError
-
-    def butcher(self, food):
-        raise NotImplementedError
-
-    def cook(self, food):
-        raise NotImplementedError
-
-    def eat(self, food):
         raise NotImplementedError
 
     def lay_down(self):
