@@ -43,12 +43,12 @@ def initialize_event_tree(leave_file):
 
 
 def main():
-    leave_file = 'event_tree.txt'
+    leave_file = 'src/event_tree.txt'
     tree, t = initialize_event_tree(leave_file)
     print(tree)
-    pos = graphviz_layout(t, prog='dot')
-    nx.draw(t, pos, arrows=False, with_labels=False)
-    plt.show()
+    # pos = graphviz_layout(t, prog='dot')
+    # nx.draw(t, pos, arrows=False, with_labels=True)
+    # plt.show()
 
 
 main()
