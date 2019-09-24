@@ -6,7 +6,6 @@ import csv
 import numpy as np
 from src import event_tree as et
 
-
 class Human:
 
     def __init__(self, world):
@@ -14,20 +13,20 @@ class Human:
         self.x = random.randint(config.World.tile_size, config.World.world_size - config.World.tile_size)
         self.y = random.randint(config.World.tile_size, config.World.world_size - config.World.tile_size)
 
-        self.id_number = None
+        self.id_number = len(self.world.human_list)
         self.name = None
 
-        self.hunger = None
-        self.sleepiness = None
+        self.hunger = random.uniform(0,1)
+        self.sleepiness = random.uniform(0,1)
 
-        self.speed = None
-        self.vision = None
+        self.speed = random.uniform(2,5)
+        self.vision = random.uniform(50,100)
         self.fatigue = None
         self.energy = None
         self.health = None
         self.max_speed = None
         self.awake = True
-        self.age = None
+        self.age = random.randint(0,100)
         self.size = None
         self.strength = None
         self.intelligence = None
@@ -36,13 +35,11 @@ class Human:
         self.sleep_threshold = None
         self.hunger_threshold = None
         self.focus = None
-        self.event_dict, self.event_tree = et.initialize_event_tree('event_tree.txt')
+        self.event_dict, self.event_tree = et.initialize_event_tree('src/event_tree.txt')
         self.hunting_method = self.get_hunting_method()
         self.state_change = self.get_state_change()
-
-
         self.current_drive = ['hunger', 'hunt_deer', 'shoot']
-        self.current_event = None
+        self.current_event = ()
 
         self.dish_list = []
         self.dish_amount = 0
@@ -64,9 +61,10 @@ class Human:
             hunting_method[method] = success_rate
         return hunting_method
 
-    def get_hunting_skill(self):
+    @staticmethod
+    def get_hunting_skill():
         hunting_skill = {}
-        with open('random_sampling.csv') as csv_file:
+        with open('src/random_sampling.csv') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line = 0
             for row in csv_reader:
@@ -77,12 +75,13 @@ class Human:
                     for item in row[1:-1]:
                         copy.append(eval(item))
                     hunting_skill[row[0]] = np.asarray(copy)
-                    line = line + 1
+                line = line + 1
         return hunting_skill, length
 
-    def get_state_change(self):
+    @staticmethod
+    def get_state_change():
         state_change = {}
-        with open('state_change.csv') as csv_file:
+        with open('src/state_change.csv') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line = 0
             for row in csv_reader:
@@ -91,14 +90,14 @@ class Human:
                     for item in row[1:]:
                         copy.append(eval(item))
                     state_change[row[0]] = np.asarray(copy)
-                    line = line + 1
+                line = line + 1
         return state_change
-
 
     def take_turn(self):
         t = self.event_tree
         self.compute_status()
         status = self.event_dict[self.current_event][1]
+        print('Human{} is in status {} before the turn.'.format(self.id_number, self.current_event))
 
         if t.out_degree(self.current_event) == 0:  # currently on leave
             if status == 1:  # specific event functions to write
@@ -111,8 +110,10 @@ class Human:
                     self.do_it()
                 else:
                     self.hunt()
-            else:
+            elif status == 0:
                 self.current_event = self.current_event[:len(self.current_event)-1]
+            else:
+                self.current_event = ()
 
         elif t.in_degree(self.current_event) != 0:  # currently on branch
             if status == 0:
@@ -125,20 +126,22 @@ class Human:
                 self.event_dict, self.event_tree = et.initialize_event_tree('event_tree,txt')
             else:
                 self.current_event = self.choose_heir()
+        print('Human{} is in status {} after the turn.'.format(self.id_number, self.current_event))
+        print()
 
     def choose_heir(self):
         t = self.event_tree
         event_type = self.event_dict[self.current_event][0]
         children = [n for n in t.neighbors(self.current_event)]
-        sorted_children = children.sort()
         if event_type == 's':
             index = len(children) - self.event_dict[self.current_event][1]
-            self.current_event = sorted_children[index]
+            self.current_event = children[index]
         else:
             score = -float('Inf')
             event = ''
             for child in children:
                 new_score = self.compute_scores(child)
+                print(new_score, child)
                 if new_score > score:
                     score = new_score
                     event = child
@@ -250,20 +253,27 @@ class Human:
         num = np.random.choice(2, 1, p=[1-success_rate, success_rate])
         if num == 1:
             self.event_dict[self.current_event][1] = 0
+            if event_name != 'chase' and event_name != 'trap':
+                self.world.animal_list.remove(self.focus)
+        else:
+            self.event_dict[self.current_event][1] = -1
         self.hunger = self.hunger + self.state_change[event_name][0]
 
     def do_it(self):
         event_name = self.event_dict[self.current_event][0]
 
-        if event_name == 'butcher':
+        if event_name == 'gather':
+            self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
+
+        elif event_name == 'butcher':
             self.world.food_stored = self.world.food_stored + self.focus.size
-            self.hunger = self.hunger + self.state_change[event_name][0]* self.focus.size
+            self.hunger = self.hunger + self.state_change[event_name][0] * self.focus.size
             self.sleepiness = self.sleepiness + self.state_change[event_name][1]
             self.focus = None
-            self.hunger = self.hunger + self.state_change[event_name][0]
+            self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
             self.event_dict[self.current_event][1] = 0
 
-        if event_name == 'cook':
+        elif event_name == 'cook':
             amount_need = self.hunger - self.dish_amount
             self.focus = self.world.food_list[0]
             max_size = self.focus.size
@@ -291,30 +301,24 @@ class Human:
                 self.dish_list = list(dish_set)
             self.focus = None
 
-        if event_name == 'eat':
+        elif event_name == 'eat':
             self.focus = self.dish_list.pop()
             if len(self.dish_list) == 0:
                 self.hunger = self.hunger - self.dish_amount
+                self.sleepiness = self.dish_amount
                 self.event_dict[self.current_event][1] = 0
             self.focus = None
 
-        self.hunger = self.hunger + self.state_change[event_name][0]
+        elif event_name == 'asleep':
+            if self.sleepiness < self.hunger:
+                self.event_dict[self.current_event][1] = 0
+
+        else:
+            self.hunger = self.hunger + self.state_change[event_name][0]
+            self.event_dict[self.current_event][1] = 0
+
         self.sleepiness = self.sleepiness + self.state_change[event_name][1]
 
-    def gather(self, animal):
-        raise NotImplementedError
-
-    def lay_down(self):
-        raise NotImplementedError
-
-    def fall_asleep(self):
-        raise NotImplementedError
-
-    def wake_up(self):
-        raise NotImplementedError
-
-    def get_up(self):
-        raise NotImplementedError
 
 # what is the high level goal (sleep, eat)
 # if sleep, do the sleep steps
