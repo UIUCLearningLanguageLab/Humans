@@ -56,7 +56,7 @@ class MainFrame(tk.Frame):
                 else:
                     the_image = self.display.image_dict['terrain']
 
-                self.main_canvas.create_image(i*50, j*50, anchor=tk.NW, image=the_image)
+                self.main_canvas.create_image(i*config.World.tile_size, j*config.World.tile_size, anchor=tk.NW, image=the_image)
 
     ############################################################################################################
     def draw_objects(self):
