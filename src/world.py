@@ -13,12 +13,13 @@ class World:
         self.human_list = []
         self.animal_category = ['rabbit', 'squirrel', 'fox', 'mouflon', 'deer', 'boar', 'ibex', 'bison', 'mammoth',
                                 'auroch']
+        self.drink_category = ['water']
         self.animal_size = {'rabbit':(3,5), 'squirrel':(1,2), 'fox':(9,19), 'mouflon':(50,100), 'deer':(180,260),
                             'boar':(88,110), 'ibex':(80,150), 'bison':(1800,2200), 'mammoth':(8000,10000),
                                 'auroch':(1000,2000)}
         self.animal_list = []
         self.food_list = []
-        self.food_stored = None
+        self.food_stored = 0
         self.hunting_method_list = []
         self.location_list = ['fridge', 'hut', 'fire']
         
