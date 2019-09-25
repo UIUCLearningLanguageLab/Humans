@@ -22,8 +22,8 @@ class Animal:
                 self.run(human)
                 move = 1
                 break
-        if move == 0:
-            print('Animal{} has nothing to do'.format(self.id_number))
+        #if move == 0:
+        #   print('Animal{} has nothing to do'.format(self.id_number))
 
     def run(self, human):
         dx = self.x - human.x
@@ -34,7 +34,7 @@ class Animal:
         self.x = self.x + dx*self.speed
         self.y = self.y + dy*self.speed
         d = ((dx*self.speed)**2 + (dy*self.speed)**2)**0.5
-        print('Animal{} runs {} from human{}'.format(self.id_number,d,human.id_number))
+        #print('Animal{} runs {} from human{}'.format(self.id_number,d,human.id_number))
 
 
 
