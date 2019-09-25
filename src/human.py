@@ -16,10 +16,11 @@ class Human:
         self.id_number = len(self.world.human_list)
         self.name = None
 
-        self.hunger = random.uniform(0,1)
-        self.sleepiness = random.uniform(0,1)
+        self.hunger = random.uniform(0.5,0.7)
+        self.sleepiness = random.uniform(0,0.5)
+        self.thirst = random.uniform(0.7,1)
 
-        self.speed = random.uniform(2,5)
+        self.speed = random.uniform(10,20)
         self.vision = random.uniform(50,100)
         self.fatigue = None
         self.energy = None
@@ -91,13 +92,14 @@ class Human:
                         copy.append(eval(item))
                     state_change[row[0]] = np.asarray(copy)
                 line = line + 1
+        print(state_change)
         return state_change
 
     def take_turn(self):
         t = self.event_tree
         self.compute_status()
         status = self.event_dict[self.current_event][1]
-        print('Human{} is in status {} before the turn.'.format(self.id_number, self.current_event))
+        print('Human{} on status {}'.format(self.id_number,self.current_event))
 
         if t.out_degree(self.current_event) == 0:  # currently on leave
             if status == 1:  # specific event functions to write
@@ -106,7 +108,8 @@ class Human:
                     self.search()
                 elif event_name == 'go_to':
                     self.go_to()
-                elif event_name in {'gather', 'butcher', 'cook', 'eat', 'lay_down', 'asleep', 'wake_up', 'get_up'}:
+                elif event_name in {'gather', 'butcher', 'cook', 'eat', 'lay_down', 'asleep', 'wake_up', 'get_up',
+                                    'get_water','drink'}:
                     self.do_it()
                 else:
                     self.hunt()
@@ -117,22 +120,23 @@ class Human:
 
         elif t.in_degree(self.current_event) != 0:  # currently on branch
             if status == 0:
-                self.current_event = self.current_event[len(self.current_event)-1]
+                self.current_event = self.current_event[:len(self.current_event)-1]
             else:
                 self.current_event = self.choose_heir()
 
         else:  # currently on the root
             if status == 0:
-                self.event_dict, self.event_tree = et.initialize_event_tree('event_tree,txt')
+                print('epoch finished')
+                self.event_dict, self.event_tree = et.initialize_event_tree('src/event_tree.txt')
             else:
                 self.current_event = self.choose_heir()
-        print('Human{} is in status {} after the turn.'.format(self.id_number, self.current_event))
-        print()
+
 
     def choose_heir(self):
         t = self.event_tree
         event_type = self.event_dict[self.current_event][0]
         children = [n for n in t.neighbors(self.current_event)]
+        children.sort()
         if event_type == 's':
             index = len(children) - self.event_dict[self.current_event][1]
             self.current_event = children[index]
@@ -141,7 +145,6 @@ class Human:
             event = ''
             for child in children:
                 new_score = self.compute_scores(child)
-                print(new_score, child)
                 if new_score > score:
                     score = new_score
                     event = child
@@ -152,15 +155,17 @@ class Human:
         if self.current_event == ():
             if event == (0, ):
                 score = self.hunger
-            else:
+            elif event == (1, ):
                 score = self.sleepiness
+            else:
+                score = self.thirst
         elif self.current_event == (0, 0):
             if event == (0, 0, 0):
                 score = self.hunger
             else:
                 score = self.world.food_stored
         else:
-            index = self.world.animal_category.index(self.focus)
+            index = self.world.animal_category.index(self.focus.category)
             score = self.hunting_method[event][index]
 
         return score
@@ -238,8 +243,8 @@ class Human:
         norm = (dx ** 2 + dy ** 2) ** 0.5
         dx = dx / norm
         dy = dy / norm
-        self.x = self.x + dx * self.speed
-        self.y = self.y + dy * self.speed
+        self.x = self.x - dx * self.speed
+        self.y = self.y - dy * self.speed
         d = ((self.x - self.focus.x)**2 + (self.y - self.focus.y)**2)**0.5
         if d < self.vision:
             self.event_dict[self.current_event][1] = 0
@@ -264,13 +269,15 @@ class Human:
 
         if event_name == 'gather':
             self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
+            self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'butcher':
+            self.world.food_list.append(self.focus)
             self.world.food_stored = self.world.food_stored + self.focus.size
             self.hunger = self.hunger + self.state_change[event_name][0] * self.focus.size
             self.sleepiness = self.sleepiness + self.state_change[event_name][1]
-            self.focus = None
             self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
+            self.focus = None
             self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'cook':
@@ -310,14 +317,21 @@ class Human:
             self.focus = None
 
         elif event_name == 'asleep':
-            if self.sleepiness < self.hunger:
+            if self.sleepiness < self.hunger or self.sleepiness < self.thirst:
                 self.event_dict[self.current_event][1] = 0
+
+        elif event_name == 'drink':
+            self.focus = random.choice(self.world.drink_category)
+            self.thirst = 0
+            self.event_dict[self.current_event][1] = 0
+            self.focus = None
 
         else:
             self.hunger = self.hunger + self.state_change[event_name][0]
             self.event_dict[self.current_event][1] = 0
 
         self.sleepiness = self.sleepiness + self.state_change[event_name][1]
+        self.thirst = self.thirst + self.state_change[event_name][2]
 
 
 # what is the high level goal (sleep, eat)
