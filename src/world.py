@@ -26,6 +26,8 @@ class World:
     def create_humans(self):
         for i in range(config.World.num_humans):
             self.human_list.append(Human(self))
+            if config.World.event_tree_file == 'src/event_tree.txt':
+                self.human_list[i].get_hunting_method()
 
     def create_animals(self):
         for i in range(config.World.num_animals):
