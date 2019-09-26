@@ -6,6 +6,7 @@ import csv
 import numpy as np
 from src import event_tree as et
 
+
 class Human:
 
     def __init__(self, world):
@@ -20,6 +21,7 @@ class Human:
         self.sleepiness = random.uniform(0,0.5)
         self.thirst = random.uniform(0.7,1)
 
+        self.sleepy_rate = 0.05
         self.speed = random.uniform(10,20)
         self.vision = random.uniform(50,100)
         self.fatigue = None
@@ -36,8 +38,8 @@ class Human:
         self.sleep_threshold = None
         self.hunger_threshold = None
         self.focus = None
-        self.event_dict, self.event_tree = et.initialize_event_tree('src/event_tree.txt')
-        self.hunting_method = self.get_hunting_method()
+        self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file)
+        self.hunting_method = None
         self.state_change = self.get_state_change()
         self.current_drive = ['hunger', 'hunt_deer', 'shoot']
         self.current_event = ()
@@ -60,7 +62,7 @@ class Human:
                 skill_rate = hunting_skill[skill_name]
                 success_rate = np.multiply(success_rate, skill_rate)
             hunting_method[method] = success_rate
-        return hunting_method
+        self.hunting_method = hunting_method
 
     @staticmethod
     def get_hunting_skill():
@@ -92,7 +94,7 @@ class Human:
                         copy.append(eval(item))
                     state_change[row[0]] = np.asarray(copy)
                 line = line + 1
-        print(state_change)
+        #print(state_change)
         return state_change
 
     def take_turn(self):
@@ -109,7 +111,7 @@ class Human:
                 elif event_name == 'go_to':
                     self.go_to()
                 elif event_name in {'gather', 'butcher', 'cook', 'eat', 'lay_down', 'asleep', 'wake_up', 'get_up',
-                                    'get_water','drink'}:
+                                    'get_water','drink','null'}:
                     self.do_it()
                 else:
                     self.hunt()
@@ -127,7 +129,8 @@ class Human:
         else:  # currently on the root
             if status == 0:
                 print('epoch finished')
-                self.event_dict, self.event_tree = et.initialize_event_tree('src/event_tree.txt')
+                print(self.hunger, self.sleepiness, self.thirst)
+                self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file)
             else:
                 self.current_event = self.choose_heir()
 
@@ -253,6 +256,7 @@ class Human:
     def hunt(self):
         event_name = self.event_dict[self.current_event][0]
         hunting_skill = self.get_hunting_skill()[0]
+        print(self.focus)
         index = self.world.animal_category.index(self.focus.category)
         success_rate = hunting_skill[event_name][index]
         num = np.random.choice(2, 1, p=[1-success_rate, success_rate])
@@ -266,6 +270,7 @@ class Human:
 
     def do_it(self):
         event_name = self.event_dict[self.current_event][0]
+        print(event_name)
 
         if event_name == 'gather':
             self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
@@ -312,7 +317,7 @@ class Human:
             self.focus = self.dish_list.pop()
             if len(self.dish_list) == 0:
                 self.hunger = self.hunger - self.dish_amount
-                self.sleepiness = self.dish_amount
+                self.sleepiness = self.sleepy_rate * self.dish_amount
                 self.event_dict[self.current_event][1] = 0
             self.focus = None
 
@@ -322,7 +327,7 @@ class Human:
 
         elif event_name == 'drink':
             self.focus = random.choice(self.world.drink_category)
-            self.thirst = 0
+            print(self.thirst)
             self.event_dict[self.current_event][1] = 0
             self.focus = None
 
