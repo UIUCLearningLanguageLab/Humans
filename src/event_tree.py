@@ -1,4 +1,5 @@
 import networkx as nx
+from src import config
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_agraph import graphviz_layout
 
@@ -43,8 +44,7 @@ def initialize_event_tree(leave_file):
 
 
 def main():
-    leave_file = 'src/event_tree.txt'
-    tree, t = initialize_event_tree(leave_file)
+    tree, t = initialize_event_tree(config.World.event_tree_file)
     print(tree)
     # pos = graphviz_layout(t, prog='dot')
     # nx.draw(t, pos, arrows=False, with_labels=True)
