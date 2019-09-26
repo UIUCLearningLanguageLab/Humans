@@ -13,8 +13,8 @@ butcher,0.2,0,1
 cook,1,1,0
 eat,0,0,0
 lay_down,0,0,0
-asleep,1,-1,0
+asleep,1,-0.1,0
 wake_up,0,0,0
 get_up,0,0,0
 get_water,0.1,0,0
-drink,0,0,0
+drink,0,0,-0.1
