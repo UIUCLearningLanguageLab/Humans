@@ -10,6 +10,7 @@ class World:
         self.simple_event_dict = {'search': 1, 'go_to': 1, 'trap': 2, 'catch': 2, 'chase': 2, 'stab': 2, 'shoot': 2,
                                   'throw_at': 2, 'gather': 2, 'butcher': 2, 'cook': 2, 'eat': 2, 'lay_down': 1,
                                   'asleep': 1, 'wake_up': 1, 'get_up': 1}
+        self.name_list = ['Jessica','Jon','Anastasia','Phil','Andrew','Lin Khern','Emily','Shufan','Jacki']
         self.human_list = []
         self.animal_category = ['rabbit', 'squirrel', 'fox', 'mouflon', 'deer', 'boar', 'ibex', 'bison', 'mammoth',
                                 'auroch']

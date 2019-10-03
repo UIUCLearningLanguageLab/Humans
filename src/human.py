@@ -15,11 +15,16 @@ class Human:
         self.y = random.randint(config.World.tile_size, config.World.world_size - config.World.tile_size)
 
         self.id_number = len(self.world.human_list)
-        self.name = None
+        self.name = random.choice(self.world.name_list)
 
         self.hunger = random.uniform(0.5,0.7)
         self.sleepiness = random.uniform(0,0.5)
         self.thirst = random.uniform(0.7,1)
+
+        self.eat_count = 0
+        self.drink_count = 0
+        self.sleep_count = 0
+        self.idle_count = 0
 
         self.sleepy_rate = 0.05
         self.speed = random.uniform(10,20)
@@ -35,17 +40,21 @@ class Human:
         self.intelligence = None
         self.food_threshold = None
         self.carry_threshold = None
-        self.sleep_threshold = None
-        self.hunger_threshold = None
+        self.sleep_threshold = 0.4
+        self.wake_threshold = 0.1
+        self.hunger_threshold = 0.3
+        self.thirst_threshold = 0.3
         self.focus = None
         self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file)
         self.hunting_method = None
         self.state_change = self.get_state_change()
-        self.current_drive = ['hunger', 'hunt_deer', 'shoot']
+        self.drive = ['hunger', 'sleepiness', 'thirst']
         self.current_event = ()
 
         self.dish_list = []
         self.dish_amount = 0
+
+        self.corpus = []
 
         # action_dict = {'hunt_deer': [A, B, C, D]}
 
@@ -101,7 +110,7 @@ class Human:
         t = self.event_tree
         self.compute_status()
         status = self.event_dict[self.current_event][1]
-        print('Human{} on status {}'.format(self.id_number,self.current_event))
+        print('{}{} on status {}'.format(self.name, self.id_number, self.current_event))
 
         if t.out_degree(self.current_event) == 0:  # currently on leave
             if status == 1:  # specific event functions to write
@@ -112,9 +121,10 @@ class Human:
                     self.go_to()
                 elif event_name in {'gather', 'butcher', 'cook', 'eat', 'lay_down', 'asleep', 'wake_up', 'get_up',
                                     'get_water','drink','null'}:
-                    self.do_it()
+                    self.do_it(event_name)
                 else:
-                    self.hunt()
+                    self.hunt(event_name)
+                self.generate_language(event_name)
             elif status == 0:
                 self.current_event = self.current_event[:len(self.current_event)-1]
             else:
@@ -131,8 +141,27 @@ class Human:
                 print('epoch finished')
                 print(self.hunger, self.sleepiness, self.thirst)
                 self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file)
+                self.focus = None
             else:
                 self.current_event = self.choose_heir()
+
+        print(self.eat_count)
+        print(self.sleep_count)
+        print(self.drink_count)
+        print(self.idle_count)
+
+    def generate_language(self,event_name):
+        if self.current_event[0] == 0:
+            print('{} is hungry.'.format(self.name))
+        elif self.current_event[0] == 1:
+            print('{} is sleepy.'.format(self.name))
+        elif self.current_event[0] == 2:
+            print('{} is thirsty.'.format(self.name))
+
+        if self.focus is None:
+            print('{} {}'.format(self.name, event_name))
+        else:
+            print('{} {} {}'.format(self.name, event_name, self.focus))
 
 
     def choose_heir(self):
@@ -156,12 +185,16 @@ class Human:
 
     def compute_scores(self, event):
         if self.current_event == ():
-            if event == (0, ):
+            if event == (0, ) and self.hunger >= self.hunger_threshold:
                 score = self.hunger
-            elif event == (1, ):
+            elif event == (1, ) and self.sleepiness >= self.sleep_threshold:
                 score = self.sleepiness
-            else:
+            elif event == (2,) and self.thirst >= self.thirst_threshold:
                 score = self.thirst
+            elif event == (3,):
+                score = 0
+            else:
+                score = -float('Inf')
         elif self.current_event == (0, 0):
             if event == (0, 0, 0):
                 score = self.hunger
@@ -253,8 +286,7 @@ class Human:
             self.event_dict[self.current_event][1] = 0
         self.hunger = self.hunger + self.speed * self.state_change['go_to'][0]
 
-    def hunt(self):
-        event_name = self.event_dict[self.current_event][0]
+    def hunt(self,event_name):
         hunting_skill = self.get_hunting_skill()[0]
         print(self.focus)
         index = self.world.animal_category.index(self.focus.category)
@@ -268,9 +300,7 @@ class Human:
             self.event_dict[self.current_event][1] = -1
         self.hunger = self.hunger + self.state_change[event_name][0]
 
-    def do_it(self):
-        event_name = self.event_dict[self.current_event][0]
-        print(event_name)
+    def do_it(self,event_name):
 
         if event_name == 'gather':
             self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
@@ -311,27 +341,35 @@ class Human:
             if self.event_dict[self.current_event][1] == 0:
                 dish_set = set(self.dish_list)
                 self.dish_list = list(dish_set)
-            self.focus = None
 
         elif event_name == 'eat':
             self.focus = self.dish_list.pop()
+            self.eat_count = self.eat_count + 1
             if len(self.dish_list) == 0:
                 self.hunger = self.hunger - self.dish_amount
                 self.sleepiness = self.sleepy_rate * self.dish_amount
                 self.event_dict[self.current_event][1] = 0
-            self.focus = None
 
         elif event_name == 'asleep':
-            if self.sleepiness < self.hunger or self.sleepiness < self.thirst:
+            if  self.sleepiness < self.thirst or self.sleepiness < self.hunger:
+                self.sleepiness = self.sleepiness - self.state_change[event_name][1]
                 self.event_dict[self.current_event][1] = 0
+            else:
+                self.sleep_count = self.sleep_count + 1
+
+        elif event_name == 'get_water':
+            self.focus = random.choice(self.world.drink_category)
+            self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'drink':
-            self.focus = random.choice(self.world.drink_category)
+            self.drink_count = self.drink_count + 1
             print(self.thirst)
+            self.thirst = 0
             self.event_dict[self.current_event][1] = 0
-            self.focus = None
 
         else:
+            if event_name == 'null':
+                self.idle_count = self.idle_count + 1
             self.hunger = self.hunger + self.state_change[event_name][0]
             self.event_dict[self.current_event][1] = 0
 

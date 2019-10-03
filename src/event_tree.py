@@ -46,9 +46,9 @@ def initialize_event_tree(leave_file):
 def main():
     tree, t = initialize_event_tree(config.World.event_tree_file)
     print(tree)
-    # pos = graphviz_layout(t, prog='dot')
-    # nx.draw(t, pos, arrows=False, with_labels=True)
-    # plt.show()
+    #pos = graphviz_layout(t, prog='dot')
+    #nx.draw(t, pos, arrows=False, with_labels=True)
+    #plt.show()
 
 
 main()
