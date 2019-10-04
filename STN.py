@@ -12,6 +12,7 @@ from nltk.parse.generate import generate
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 from operator import itemgetter
+from networkx.drawing.nx_agraph import graphviz_layout
 
 ############################################################################################
 
@@ -28,7 +29,7 @@ badwords = set(stopwords.words('english'))
 # read the corpus(parsed) from a txt file.
 
 def get_parsed_corpus(corpus):
-    if type(corpus) == 'list':
+    if isinstance(corpus,list):
         parsed_corpus = corpus
     else:
         f = open(corpus)
@@ -415,7 +416,8 @@ class Stn:
         steven_constituent = self.constituent_net
 
         plt.subplot(121)
-        nx.draw(steven, with_labels=False)
+        pos = graphviz_layout(steven, prog='dot')
+        nx.draw(steven, pos, with_labels=True)
 
         plt.subplot(122)
         nx.draw(steven_constituent, with_labels=True)
@@ -477,9 +479,8 @@ class Stn:
 # select a list of words of the network, display the relatedness matrix and similarity matrix concerning the word list
 # and show the categorization the words with heatmapcluster
 
-def main():
+def analysis(corpus):
     # get the corpus, which is a list of parsed sentences(in the form of embedded lists)
-    corpus = 'childes.txt'
 
     # generate the STN corresponding to the network
     Steven = Stn(corpus)
@@ -586,4 +587,3 @@ def main():
     plt.show()
 
 
-main()
