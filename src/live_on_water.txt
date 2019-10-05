@@ -3,6 +3,6 @@
 ['asleep',(1,1)]
 ['wake_up',(1,2)]
 ['get_up',(1,3)]
-['get_water',(2,0)]
+['get_drink',(2,0)]
 ['drink',(2,1)]
 ['null',(3,)]

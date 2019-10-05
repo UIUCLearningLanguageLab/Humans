@@ -1,3 +1,6 @@
+# This module define Stn class
+
+
 import nltk
 import random
 import operator
@@ -6,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import pandas
+import math
 import heatmapcluster
 from nltk import WordNetLemmatizer
 from nltk.parse.generate import generate
@@ -70,7 +74,7 @@ def flat(l):
 
 def create_tree(x):
     if type(x) == str:
-        return set(), {x}
+        return [], [x]
     else:
         if type(x) == list:
             x = return_tuple(x)
@@ -92,7 +96,7 @@ def create_tree(x):
 
 def complete_tree(x):
     if type(x) == str:
-        return set(), {x}
+        return [], [x]
     else:
         tree = create_tree(x)
         if type(x) == list:
@@ -127,15 +131,12 @@ def get_wordnet_tag(word):
 
 
 
-
-
 #########################################################################################
 #########################################################################################
 
 # This is a function that returns a neighbor (consisting of nodes) of a specified node with an assigned size.
 # For example, given a graph G, and a node u in G, and let size be 2, it returns all nodes in G which are up to
 # 2 edges away from u.
-
 
 def get_sized_neighbor_node(G, node, size):
     i = 0
@@ -160,7 +161,7 @@ def get_sized_neighbor_node(G, node, size):
 class Stn:
 
     def __init__(self, corpus):
-        self.freq_threshold = 200
+        self.freq_threshold = 1
         self.corpus = get_parsed_corpus(corpus)
         self.network = self.get_network()
         self.word_dict = self.network[3]
@@ -210,19 +211,35 @@ class Stn:
                 print("{} sentences added to the network.".format(epoch))
         end_time = time.time()
         time_joining_trees = end_time - start_time
+        steven = nx.DiGraph()
+        network_node_set = set(network_node)
+        network_edge_dict = {}
+        for edge in network_edge:
+            if edge in network_edge_dict:
+                network_edge_dict[edge] = network_edge_dict[edge] + 1
+            else:
+                network_edge_dict[edge] = 1
+        weighted_network_edge = []
+        for edge in network_edge_dict:
+            weighted_network_edge.append(edge + (math.log10(network_edge_dict[edge]+1),))
+        print()
+        print('Weighted Edges: {}'.format(weighted_network_edge))
+        print()
+        steven.add_weighted_edges_from(weighted_network_edge)
         print()
         print('{} used to join the trees.'.format(time_joining_trees))
         print()
-        steven = nx.DiGraph()
-        steven.add_edges_from(network_edge, length=1)
-        print(len(word_dict))
+        print('Nodes in the network: {}'.format(network_node_set))
+        print()
+        print(len(word_dict),word_dict)
+        print()
         final_freq_dict = {}
         for word in freq_dict:
             if freq_dict[word] >= self.freq_threshold:
                 final_freq_dict[word] = freq_dict[word]
         print(len(final_freq_dict))
 
-        return network_edge, network_node, steven, word_dict, diamond_list, final_freq_dict
+        return weighted_network_edge, network_node_set, steven, word_dict, diamond_list, final_freq_dict
 
     ###########################################################################################
 
@@ -363,7 +380,7 @@ class Stn:
             for j in range(i + 1, l):
                 id2 = self.word_dict[freq_list[j]]
                 w = weight_matrix[i][j] / (weight_normalizer[i] * weight_normalizer[j]) ** .5
-                if w > 0.001:
+                if w > 0:
                     steven_constituent.add_edge(freq_list[i], freq_list[j])
                     count = count + 1
                     if count >= 100:
@@ -417,7 +434,9 @@ class Stn:
 
         plt.subplot(121)
         pos = graphviz_layout(steven, prog='dot')
-        nx.draw(steven, pos, with_labels=True)
+        edges = steven.edges()
+        weights = [steven[u][v]['weight'] for u, v in edges]
+        nx.draw(steven, pos, with_labels=True, width = weights)
 
         plt.subplot(122)
         nx.draw(steven_constituent, with_labels=True)
@@ -475,115 +494,6 @@ class Stn:
 
 ############################################################################################
 
-# main function
-# select a list of words of the network, display the relatedness matrix and similarity matrix concerning the word list
-# and show the categorization the words with heatmapcluster
 
-def analysis(corpus):
-    # get the corpus, which is a list of parsed sentences(in the form of embedded lists)
-
-    # generate the STN corresponding to the network
-    Steven = Stn(corpus)
-
-    # generate the lexical network out of the STN
-    C_net = Steven.constituent_net
-
-    # generate some word lists to test the distance
-    #word_list1 = ['milk', 'juice', 'tea', 'apple', 'peanut', 'potato', 'pear', 'tomato', 'carrot', 'noodle']
-    #word_list2 = ['mommy', 'daddy', 'baby', 'doctor', 'teacher', 'farmer', 'girl', 'boy', 'grandma', 'mama']
-    #word_list3 = ['dog', 'rabbit', 'squirrel', 'alligator', 'duck', 'goat', 'cat', 'chicken', 'horse', 'piggie']
-
-    # get the nouns, verbs, adjs and advs and show their numbers.
-    w_list = Steven.word_list
-    n_list = Steven.tagged_word['n']
-    v_list = Steven.tagged_word['v']
-    a_list = Steven.tagged_word['a']
-    r_list = Steven.tagged_word['r']
-
-    print()
-    print('{} words in total'.format(len(w_list)))
-    print('{} nouns in total'.format(len(n_list)))
-    print('{} verbs in total'.format(len(v_list)))
-    print('{} adjectives in total'.format(len(a_list)))
-    print('{} adverbs in total'.format(len(r_list)))
-    print()
-
-    # print(diamonds)
-
-    # primrary information of the lexical net: num of words, and num of connections.
-    print(C_net.number_of_nodes(), C_net.number_of_edges())
-
-    # sizes of components in the lexical nets, and the distribution of sizes in histogram
-    components = [len(c) for c in sorted(nx.connected_components(C_net), key=len, reverse=True)]
-    print(components)
-    print()
-    degree = nx.degree_histogram(C_net)
-    degree_distribution = {}
-    for i in range(len(degree)):
-        if degree[i] > 0:
-            degree_distribution[i + 1] = degree[i]
-
-    print(degree_distribution)
-    print()
-
-    # degree distribution of the nodes in
-    degree_dict = {}
-
-    for node in C_net:
-        degree_dict[node] = C_net.degree(node)
-
-    sorted_degree_dict = sorted(degree_dict.items(), key=operator.itemgetter(1), reverse=True)
-    print(sorted_degree_dict)
-
-    x = range(len(degree))
-    y = [z / float(sum(degree)) for z in degree]
-
-    # to see if the distribution of the degrees follows the power law
-    plt.loglog(x, y, color='blue', linewidth=2)
-
-    ##########################################################################
-    # get the distances(relatedness) between the testing word list
-
-    #time1 = time.time()
-
-    #table1, matrix1 = Steven.compute_distance_matrix(word_list1, word_list2)
-    #table2, matrix2 = Steven.compute_distance_matrix(word_list1, word_list3)
-    #table3, matrix3 = Steven.compute_distance_matrix(word_list2, word_list3)
-
-    #mean1 = matrix1.mean()
-    #std1 = matrix1.std()
-    #mean2 = matrix2.mean()
-    #std2 = matrix2.std()
-    #mean3 = matrix3.mean()
-    #std3 = matrix3.std()
-    # table2, matrix2= Steven.compute_similarity_matrix(w_list,1)
-
-    #time2 = time.time()
-    #print('Relatedness Matrix')
-    #print(table1)
-    #print(mean1, std1)
-    #print()
-    #print(table2)
-    #print(mean2, std2)
-    #print()
-    #print(table3)
-    #print(mean3, std3)
-    #print()
-    #time_used = time2 - time1
-    #print('{} used for caculating the relatedness'.format(time_used))
-    #print()
-
-
-    # nx.draw(steven_adj, with_labels=True)
-    # print('Similarity matrix')
-    # print(table2)
-
-    Steven.plot_network()
-
-
-
-
-    # nx.draw(C_net, with_labels=True)
-    plt.show()
 
 

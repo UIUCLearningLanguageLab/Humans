@@ -1,8 +1,8 @@
 from src import world
 from src import config
-import STN
-import matplotlib.pyplot as plt
+import STN_analysis
 from src.display import display
+
 
 def main():
     the_world = world.World()
@@ -14,6 +14,5 @@ def main():
     #the_display.root.mainloop()
     for human in the_world.human_list:
         print(human.corpus)
-        STN.analysis(human.corpus)
-
+        STN_analysis.analysis(human.corpus)
 main()
