@@ -13,7 +13,8 @@ def initialize_event_tree(leave_file):
             item = eval(text)
             line_list.append(item)
     parallel = line_list[0]
-    leaves = line_list[1:]
+    prob_parallel = line_list[1]
+    leaves = line_list[2:]
     tree = {}
     depth = 0
     t = nx.DiGraph()
@@ -27,7 +28,10 @@ def initialize_event_tree(leave_file):
             child_code = code[:i+1]
             if parent_code not in tree:
                 if parent_code in parallel:
-                    tree[parent_code] = ['p', 1]
+                    if parent_code in prob_parallel:
+                        tree[parent_code] = ['pp', 1]
+                    else:
+                        tree[parent_code] = ['op', 1]
                 else:
                     tree[parent_code] = ['s', 1]
                 t.add_edge(parent_code, child_code)

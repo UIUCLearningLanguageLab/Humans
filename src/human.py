@@ -158,7 +158,7 @@ class Human:
         elif self.current_event[0] == 2:
             print('{} is thirsty.'.format(self.name))
 
-        if self.focus is None:
+        if self.focus is None or event_name == 'searching':
             print('{} is {}.'.format(self.name, event_name))
             if event_name is not 'idling':
                 self.corpus.append((self.name, event_name))
@@ -179,7 +179,7 @@ class Human:
         if event_type == 's':
             index = len(children) - self.event_dict[self.current_event][1]
             self.current_event = children[index]
-        else:
+        elif event_type == 'op':
             score = -float('Inf')
             event = ''
             for child in children:
@@ -188,6 +188,13 @@ class Human:
                     score = new_score
                     event = child
             self.current_event = event
+        else:
+            hunting_method_dist = []
+            index = self.world.animal_category.index(self.focus.category)
+            for child in children:
+                hunting_method_dist.append(self.hunting_method[child][index])
+            norm = [float(i) / sum(hunting_method_dist) for i in hunting_method_dist]
+            self.current_event = children[int(np.random.choice(len(children), 1, norm)[0])]
         return self.current_event
 
     def compute_scores(self, event):
@@ -224,7 +231,7 @@ class Human:
                     score = score + 1
             self.event_dict[self.current_event][1] = score
 
-        elif current_dict[self.current_event][0] == 'p':
+        elif current_dict[self.current_event][0] in {'op','pp'}:
             for event in t.neighbors(self.current_event):
                 if current_dict[event][1] == 0:
                     self.event_dict[self.current_event][1] = 0
@@ -314,12 +321,12 @@ class Human:
             self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'butchering':
+            self.focus.size = self.focus.size/2
             self.world.food_list.append(self.focus)
             self.world.food_stored = self.world.food_stored + self.focus.size
             self.hunger = self.hunger + self.state_change[event_name][0] * self.focus.size
             self.sleepiness = self.sleepiness + self.state_change[event_name][1]
             self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
-            self.focus = None
             self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'cooking':
@@ -362,8 +369,7 @@ class Human:
             self.sleepiness = 0
             self.event_dict[self.current_event][1] = 0
 
-
-        elif event_name == 'getting_water':
+        elif event_name == 'getting_drink':
             self.focus = random.choice(self.world.drink_category)
             self.event_dict[self.current_event][1] = 0
 
