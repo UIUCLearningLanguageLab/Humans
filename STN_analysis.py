@@ -3,13 +3,16 @@ import STN
 import networkx as nx
 import matplotlib.pyplot as plt
 import operator
-
+import numpy as np
+import random
+from scipy.sparse import lil_matrix
 
 def analysis(corpus):
     # get the corpus, which is a list of parsed sentences(in the form of embedded lists)
 
     # generate the STN corresponding to the network
     Steven = STN.Stn(corpus)
+
 
 
     # generate the lexical network out of the STN
@@ -63,13 +66,58 @@ def analysis(corpus):
     sorted_degree_dict = sorted(degree_dict.items(), key=operator.itemgetter(1), reverse=True)
     print(sorted_degree_dict)
 
-    x = range(len(degree))
-    y = [z / float(sum(degree)) for z in degree]
+
+
+
 
     # to see if the distribution of the degrees follows the power law
+    x = range(len(degree))
+    y = [z / float(sum(degree)) for z in degree]
     plt.loglog(x, y, color='blue', linewidth=2)
 
     ##########################################################################
+
+    # Spreading activation to measure the functional distance
+    W = nx.adjacency_matrix(Steven.network[2], nodelist = Steven.network[1])
+    W.todense()
+    W = lil_matrix(W)
+    l = W.shape[0]
+    print(W)
+    normalizer = W.sum(1)
+    for i in range(l):
+        for j in range(l):
+            if normalizer[i][0,0] == 0:
+                W[i,j] = 0
+            else:
+                W[i,j] = W[i,j]/normalizer[i][0,0]
+    W = W + np.transpose(W)
+    print(W)
+
+
+    word = random.choice(w_list)
+    activation = np.zeros((1,l),float)
+    activation[0,Steven.network[1].index(word)] = 1
+    for i in range(50):
+        activation = activation*W
+        for j in range(l):
+            if activation[0,j] > 1:
+                activation[0,j] = 1
+        print(i)
+        print(np.round(activation,2))
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
     # get the distances(relatedness) between the testing word list
 
     #time1 = time.time()

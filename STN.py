@@ -213,6 +213,7 @@ class Stn:
         time_joining_trees = end_time - start_time
         steven = nx.DiGraph()
         network_node_set = set(network_node)
+        network_node_list = list(network_node_set)
         network_edge_dict = {}
         for edge in network_edge:
             if edge in network_edge_dict:
@@ -223,13 +224,17 @@ class Stn:
         for edge in network_edge_dict:
             weighted_network_edge.append(edge + (math.log10(network_edge_dict[edge]+1),))
         print()
-        print('Weighted Edges: {}'.format(weighted_network_edge))
+        print('Weighted Edges:')
+        for edge in weighted_network_edge:
+            print(network_node_list.index(edge[0]), network_node_list.index(edge[1]), edge)
         print()
         steven.add_weighted_edges_from(weighted_network_edge)
         print()
         print('{} used to join the trees.'.format(time_joining_trees))
         print()
-        print('Nodes in the network: {}'.format(network_node_set))
+        print('Nodes in the network:')
+        for node in network_node_list:
+            print(network_node_list.index(node), node)
         print()
         print(len(word_dict),word_dict)
         print()
@@ -239,7 +244,7 @@ class Stn:
                 final_freq_dict[word] = freq_dict[word]
         print(len(final_freq_dict))
 
-        return weighted_network_edge, network_node_set, steven, word_dict, diamond_list, final_freq_dict
+        return weighted_network_edge, network_node_list, steven, word_dict, diamond_list, final_freq_dict
 
     ###########################################################################################
 
