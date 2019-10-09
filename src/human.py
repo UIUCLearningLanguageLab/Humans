@@ -110,7 +110,7 @@ class Human:
         t = self.event_tree
         self.compute_status()
         status = self.event_dict[self.current_event][1]
-        print('{}{} on status {}'.format(self.name, self.id_number, self.current_event))
+        #print('{}{} on status {}'.format(self.name, self.id_number, self.current_event))
 
         if t.out_degree(self.current_event) == 0:  # currently on leave
             if status == 1:  # specific event functions to write
@@ -120,7 +120,7 @@ class Human:
                 elif event_name == 'going_to':
                     self.going_to()
                 elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping', 'waking_up', 'getting_up',
-                                    'getting_drink','drinking','idling'}:
+                                    'getting_drink','drinking','idling', 'washing'}:
                     self.do_it(event_name)
                 else:
                     self.hunt(event_name)
@@ -145,30 +145,30 @@ class Human:
             else:
                 self.current_event = self.choose_heir()
 
-        print(self.eat_count)
-        print(self.sleep_count)
-        print(self.drink_count)
-        print(self.idle_count)
+        #print(self.eat_count)
+        #print(self.sleep_count)
+        #print(self.drink_count)
+        #print(self.idle_count)
 
     def generate_language(self,event_name):
-        if self.current_event[0] == 0:
-            print('{} is hungry.'.format(self.name))
-        elif self.current_event[0] == 1:
-            print('{} is sleepy.'.format(self.name))
-        elif self.current_event[0] == 2:
-            print('{} is thirsty.'.format(self.name))
+        #if self.current_event[0] == 0:
+        #    print('{} is hungry.'.format(self.name))
+        #elif self.current_event[0] == 1:
+        #    print('{} is sleepy.'.format(self.name))
+        #elif self.current_event[0] == 2:
+        #    print('{} is thirsty.'.format(self.name))
 
         if self.focus is None or event_name == 'searching':
-            print('{} is {}.'.format(self.name, event_name))
+            #print('{} is {}.'.format(self.name, event_name))
             if event_name is not 'idling':
                 self.corpus.append((self.name, event_name))
         else:
             if isinstance(self.focus, animals.Animal):
                 focus = self.focus.category
-                print('{} is {} the {}.'.format(self.name, event_name, focus))
+                #print('{} is {} the {}.'.format(self.name, event_name, focus))
             else:
                 focus = self.focus
-                print('{} is {} {}.'.format(self.name, event_name, focus))
+                #print('{} is {} {}.'.format(self.name, event_name, focus))
             self.corpus.append((self.name, (event_name, focus)))
 
     def choose_heir(self):
