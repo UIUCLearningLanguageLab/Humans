@@ -444,7 +444,9 @@ class Stn:
         nx.draw(steven, pos, with_labels=True, width = weights)
 
         plt.subplot(122)
-        nx.draw(steven_constituent, with_labels=True, node_color = color_list)
+        print('color_list')
+        print(color_list)
+        nx.draw(steven_constituent, with_labels=True, node_color=color_list, cmap= plt.cm.plasma)
 
     ###########################################################################################
 
