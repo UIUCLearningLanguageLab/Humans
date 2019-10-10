@@ -155,6 +155,11 @@ def activation_spreading_analysis(stn, words):
     sorted_activation.sort(reverse = True)
     print(sorted_activation)
 
+    color_list1 = []
+    for node in C_net:
+        color_list1.append(math.log(activation_recorder[0, node_list.index(node)]))
+
+
     color_list = []
     for node in C_net:
         scale = -math.log2(np.amin(activation_recorder))
@@ -164,7 +169,7 @@ def activation_spreading_analysis(stn, words):
         else:
             color_list.append('#ff'+color+color)
 
-    print(color_list)
+    #print(color_list)
 
-    stn.plot_network(color_list)
+    stn.plot_network(color_list1)
     plt.show()
