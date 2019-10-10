@@ -5,13 +5,14 @@ import matplotlib.pyplot as plt
 import operator
 import numpy as np
 import random
+import math
 from scipy.sparse import lil_matrix
 
-def analysis(corpus):
+def general_analysis(Steven):
     # get the corpus, which is a list of parsed sentences(in the form of embedded lists)
 
     # generate the STN corresponding to the network
-    Steven = STN.Stn(corpus)
+
 
 
 
@@ -67,56 +68,12 @@ def analysis(corpus):
     print(sorted_degree_dict)
 
 
-
-
-
     # to see if the distribution of the degrees follows the power law
     x = range(len(degree))
     y = [z / float(sum(degree)) for z in degree]
     plt.loglog(x, y, color='blue', linewidth=2)
 
     ##########################################################################
-
-    # Spreading activation to measure the functional distance
-    W = nx.adjacency_matrix(Steven.network[2], nodelist = Steven.network[1])
-    W.todense()
-    W = lil_matrix(W)
-    l = W.shape[0]
-    print(W)
-    normalizer = W.sum(1)
-    for i in range(l):
-        for j in range(l):
-            if normalizer[i][0,0] == 0:
-                W[i,j] = 0
-            else:
-                W[i,j] = W[i,j]/normalizer[i][0,0]
-    W = W + np.transpose(W)
-    print(W)
-
-
-    word = random.choice(w_list)
-    activation = np.zeros((1,l),float)
-    activation[0,Steven.network[1].index(word)] = 1
-    for i in range(50):
-        activation = activation*W
-        for j in range(l):
-            if activation[0,j] > 1:
-                activation[0,j] = 1
-        print(i)
-        print(np.round(activation,2))
-
-
-
-
-
-        
-
-
-
-
-
-
-
 
     # get the distances(relatedness) between the testing word list
 
@@ -154,10 +111,60 @@ def analysis(corpus):
     # print('Similarity matrix')
     # print(table2)
 
-    Steven.plot_network()
-
-
-
-
     # nx.draw(C_net, with_labels=True)
+    plt.show()
+
+
+def activation_spreading_analysis(stn, words):
+    # Spreading activation to measure the functional distance
+
+    C_net = stn.constituent_net
+    W = nx.adjacency_matrix(stn.network[2], nodelist = stn.network[1])
+    W.todense()
+    W = lil_matrix(W)
+    l = W.shape[0]
+    print(W)
+    normalizer = W.sum(1)
+    for i in range(l):
+        for j in range(l):
+            if normalizer[i][0,0] == 0:
+                W[i,j] = 0
+            else:
+                W[i,j] = W[i,j]/normalizer[i][0,0]
+    W = W + np.transpose(W)
+    print(W)
+
+    node_list = stn.network[1]
+    activation = np.zeros((1,l),float)
+    fired = np.ones((1, l), float)
+
+    for word in words:
+        activation[0, node_list.index(word)] = 1
+        fired[0, node_list.index(word)] = 0
+    activation_recorder = activation
+
+    while fired.any():
+        activation = activation*W
+        activation_recorder = activation_recorder + np.multiply(fired, activation)
+        for i in range(l):
+            if fired[0,i] == 1 and activation[0,i] > 0:
+                fired[0,i] = fired[0,i] - 1
+
+    print(activation_recorder)
+    sorted_activation = activation_recorder.tolist()[0]
+    sorted_activation.sort(reverse = True)
+    print(sorted_activation)
+
+    color_list = []
+    for node in C_net:
+        scale = -math.log2(np.amin(activation_recorder))
+        color = str(hex(round(255*(- math.log2(activation_recorder[0, node_list.index(node)]))/scale)))[2:]
+        if color == '0':
+            color_list.append('#ff0000')
+        else:
+            color_list.append('#ff'+color+color)
+
+    print(color_list)
+
+    stn.plot_network(color_list)
     plt.show()

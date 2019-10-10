@@ -433,7 +433,7 @@ class Stn:
     ###########################################################################################
 
     # ploting the STN, together with the neighbor-net and the constituent-net
-    def plot_network(self):
+    def plot_network(self, color_list):
         steven = self.network[2]
         steven_constituent = self.constituent_net
 
@@ -444,7 +444,7 @@ class Stn:
         nx.draw(steven, pos, with_labels=True, width = weights)
 
         plt.subplot(122)
-        nx.draw(steven_constituent, with_labels=True)
+        nx.draw(steven_constituent, with_labels=True, node_color = color_list)
 
     ###########################################################################################
 
