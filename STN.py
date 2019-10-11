@@ -5,6 +5,7 @@ import nltk
 import random
 import operator
 import networkx as nx
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import time
@@ -444,9 +445,17 @@ class Stn:
         nx.draw(steven, pos, with_labels=True, width = weights)
 
         plt.subplot(122)
+        nodes = steven_constituent.nodes()
         print('color_list')
         print(color_list)
-        nx.draw(steven_constituent, with_labels=True, node_color=color_list, cmap= plt.cm.plasma)
+        vmin = min(color_list)
+        vmax = max(color_list)
+        cmap = plt.cm.plasma
+        nx.draw(steven_constituent, with_labels=True, node_color=color_list, cmap= cmap)
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        sm._A = []
+        plt.colorbar(sm)
+
 
     ###########################################################################################
 
