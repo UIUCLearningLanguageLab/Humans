@@ -46,7 +46,7 @@ class Human:
         self.thirst_threshold = 0.3
         self.focus = None
         self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file)
-        self.hunting_method = None
+        self.hunting_method = self.get_hunting_method()
         self.state_change = self.get_state_change()
         self.drive = ['hunger', 'sleepiness', 'thirst']
         self.current_event = ()
@@ -139,6 +139,7 @@ class Human:
         else:  # currently on the root
             if status == 0:
                 print('epoch finished')
+                self.world.epoch = self.world.epoch + 1
                 print(self.hunger, self.sleepiness, self.thirst)
                 self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file)
                 self.focus = None
@@ -194,7 +195,7 @@ class Human:
             for child in children:
                 hunting_method_dist.append(self.hunting_method[child][index])
             norm = [float(i) / sum(hunting_method_dist) for i in hunting_method_dist]
-            self.current_event = children[int(np.random.choice(len(children), 1, norm)[0])]
+            self.current_event = children[int(np.random.choice(len(children), 1, p=norm)[0])]
         return self.current_event
 
     def compute_scores(self, event):
@@ -321,10 +322,10 @@ class Human:
             self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'butchering':
-            self.focus.size = self.focus.size/2
+            self.focus.remain_size = self.focus.size/2
             self.world.food_list.append(self.focus)
-            self.world.food_stored = self.world.food_stored + self.focus.size
-            self.hunger = self.hunger + self.state_change[event_name][0] * self.focus.size
+            self.world.food_stored = self.world.food_stored + self.focus.remain_size
+            self.hunger = self.hunger + self.state_change[event_name][0] * self.focus.remain_size
             self.sleepiness = self.sleepiness + self.state_change[event_name][1]
             self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
             self.event_dict[self.current_event][1] = 0
@@ -332,22 +333,17 @@ class Human:
         elif event_name == 'cooking':
             amount_need = self.hunger - self.dish_amount
             self.focus = self.world.food_list[0]
-            max_size = self.focus.size
-            for food in self.world.food_list:
-                if food.size > max_size:
-                    self.focus = food
-                    if food.size > amount_need:
-                        break
-            if self.focus.size >= amount_need:
-                self.focus.size = self.focus.size - amount_need
+            if self.focus.remain_size >= amount_need:
+                self.focus.remain_size = self.focus.remain_size - amount_need
                 self.dish_amount = self.hunger
                 self.world.food_stored = self.world.food_stored - amount_need
                 self.event_dict[self.current_event][1] = 0
 
             else:
-                self.dish_amount = self.dish_amount + self.focus.size
-                self.world.food_stored = self.world.food_stored - self.focus.size
+                self.dish_amount = self.dish_amount + self.focus.remain_size
+                self.world.food_stored = self.world.food_stored - self.focus.remain_size
                 self.world.food_list.remove(self.focus)
+                self.world.consumption.append((self.focus.category,self.focus.size/2))
                 if len(self.world.food_list) == 0:
                     self.event_dict[self.current_event][1] = 0
 

@@ -22,8 +22,10 @@ class World:
         self.animal_list = []
         self.food_list = []
         self.food_stored = 0
+        self.consumption = []
         self.hunting_method_list = []
         self.location_list = ['fridge', 'hut', 'fire']
+        self.epoch = 0
         
     def create_humans(self):
         for i in range(config.World.num_humans):
