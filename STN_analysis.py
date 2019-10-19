@@ -46,6 +46,7 @@ def general_analysis(Steven):
     print(C_net.number_of_nodes(), C_net.number_of_edges())
 
     # sizes of components in the lexical nets, and the distribution of sizes in histogram
+    print('size of components')
     components = [len(c) for c in sorted(nx.connected_components(C_net), key=len, reverse=True)]
     print(components)
     print()
@@ -65,6 +66,7 @@ def general_analysis(Steven):
         degree_dict[node] = C_net.degree(node)
 
     sorted_degree_dict = sorted(degree_dict.items(), key=operator.itemgetter(1), reverse=True)
+    print('degree distribution of words in lexical net:')
     print(sorted_degree_dict)
 
 
@@ -123,7 +125,7 @@ def activation_spreading_analysis(stn, words):
     W.todense()
     W = lil_matrix(W)
     l = W.shape[0]
-    print(W)
+    #print(W)
     normalizer = W.sum(1)
     for i in range(l):
         for j in range(l):
@@ -132,7 +134,7 @@ def activation_spreading_analysis(stn, words):
             else:
                 W[i,j] = W[i,j]/normalizer[i][0,0]
     W = W + np.transpose(W)
-    print(W)
+    #print(W)
 
     node_list = stn.network[1]
     activation = np.zeros((1,l),float)
@@ -150,10 +152,10 @@ def activation_spreading_analysis(stn, words):
             if fired[0,i] == 1 and activation[0,i] > 0:
                 fired[0,i] = fired[0,i] - 1
 
-    print(activation_recorder)
+    #print(activation_recorder)
     sorted_activation = activation_recorder.tolist()[0]
     sorted_activation.sort(reverse = True)
-    print(sorted_activation)
+    #print(sorted_activation)
 
     color_list1 = []
     for node in C_net:

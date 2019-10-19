@@ -439,15 +439,14 @@ class Stn:
         steven_constituent = self.constituent_net
 
         plt.subplot(121)
+        plt.title('syntax tree network', loc= 'center')
         pos = graphviz_layout(steven, prog='dot')
         edges = steven.edges()
         weights = [steven[u][v]['weight'] for u, v in edges]
         nx.draw(steven, pos, with_labels=True, width = weights)
 
         plt.subplot(122)
-        nodes = steven_constituent.nodes()
-        print('color_list')
-        print(color_list)
+        plt.title('lexical network with activation dispersion', loc= 'center')
         vmin = min(color_list)
         vmax = max(color_list)
         cmap = plt.cm.plasma
