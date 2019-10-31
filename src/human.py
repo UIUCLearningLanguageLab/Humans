@@ -45,7 +45,7 @@ class Human:
         self.hunger_threshold = 1
         self.thirst_threshold = 0.3
         self.focus = None
-        self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file)
+        self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file,1)
         self.hunting_method = self.get_hunting_method()
         self.state_change = self.get_state_change()
         self.drive = ['hunger', 'sleepiness', 'thirst']
@@ -141,7 +141,7 @@ class Human:
                 print('epoch finished')
                 self.world.epoch = self.world.epoch + 1
                 print(self.hunger, self.sleepiness, self.thirst)
-                self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file)
+                self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file,0)
                 self.focus = None
             else:
                 self.current_event = self.choose_heir()
