@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from networkx.drawing.nx_agraph import graphviz_layout
 
 
-def initialize_event_tree(leave_file):
+def initialize_event_tree(leave_file, show_tree):
     f = open(leave_file)
     line_list = []
     for line in f:
@@ -44,11 +44,16 @@ def initialize_event_tree(leave_file):
         if num > 0 and tree[node][0] == 's':
             tree[node][1] = len([n for n in t.neighbors(node)])
 
+    if show_tree:
+        pos = graphviz_layout(t, prog='dot')
+        nx.draw(t, pos, arrows=False, with_labels=True)
+        plt.show()
+
     return tree, t
 
 
 def main():
-    tree, t = initialize_event_tree(config.World.event_tree_file)
+    tree, t = initialize_event_tree(config.World.event_tree_file,0)
     print(tree)
     #pos = graphviz_layout(t, prog='dot')
     #nx.draw(t, pos, arrows=False, with_labels=True)
