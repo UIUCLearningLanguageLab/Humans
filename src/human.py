@@ -6,7 +6,8 @@ import csv
 import numpy as np
 from src import event_tree as et
 from src import animals
-
+from src import world
+import STN
 
 class Human:
 
@@ -55,8 +56,21 @@ class Human:
         self.dish_amount = 0
 
         self.corpus = []
+        self.linear_corpus = []
 
         # action_dict = {'hunt_deer': [A, B, C, D]}
+
+    def get_activated_words(self):
+        l = len(self.corpus)
+        Steve = STN.Stn(self.corpus)
+        #animal = set(the_world.animal_category)
+        hunting = {'trapping'}#,'stabbing','shooting','throwing'}
+        if len(hunting.intersection(set(Steve.word_list))) == 0:
+            words = random.choices(Steve.word_list, k=1)
+        else:
+            hunting_list = list(set(Steve.word_list).intersection(hunting))
+            words = random.choices(hunting_list, k=1)
+        return words,Steve
 
     def get_hunting_method(self):
         t = self.event_tree
@@ -139,7 +153,9 @@ class Human:
         else:  # currently on the root
             if status == 0:
                 print('epoch finished')
-                self.world.epoch = self.world.epoch + 1
+                l = len(self.world.human_list)
+                if self.world.human_list.index(self) == l-1:
+                    self.world.epoch = self.world.epoch + 1
                 print(self.hunger, self.sleepiness, self.thirst)
                 self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file,0)
                 self.focus = None
@@ -163,6 +179,7 @@ class Human:
             #print('{} is {}.'.format(self.name, event_name))
             if event_name is not 'idling':
                 self.corpus.append((self.name, event_name))
+                self.linear_corpus.append([self.name, event_name])
         else:
             if isinstance(self.focus, animals.Animal):
                 focus = self.focus.category
@@ -171,6 +188,7 @@ class Human:
                 focus = self.focus
                 #print('{} is {} {}.'.format(self.name, event_name, focus))
             self.corpus.append((self.name, (event_name, focus)))
+            self.linear_corpus.append([self.name,event_name,focus])
 
     def choose_heir(self):
         t = self.event_tree
@@ -391,3 +409,4 @@ class Human:
 
 
 # within those, what are specific goal (eat
+

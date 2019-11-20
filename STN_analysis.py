@@ -117,11 +117,10 @@ def general_analysis(Steven):
     plt.show()
 
 
-def activation_spreading_analysis(stn, words):
+def activation_spreading_analysis(net, words):
     # Spreading activation to measure the functional distance
 
-    C_net = stn.constituent_net
-    W = nx.adjacency_matrix(stn.network[2], nodelist = stn.network[1])
+    W = nx.adjacency_matrix(net.network[2], nodelist = net.network[1])
     W.todense()
     W = lil_matrix(W)
     l = W.shape[0]
@@ -133,10 +132,15 @@ def activation_spreading_analysis(stn, words):
                 W[i,j] = 0
             else:
                 W[i,j] = W[i,j]/normalizer[i][0,0]
-    W = W + np.transpose(W)
+
+    if net.network_type == 'stn':
+        c_net = net.constituent_net
+        W = W + np.transpose(W)
+    else:
+        c_net = net.network[2]
     #print(W)
 
-    node_list = stn.network[1]
+    node_list = net.network[1]
     activation = np.zeros((1,l),float)
     fired = np.ones((1, l), float)
 
@@ -157,21 +161,12 @@ def activation_spreading_analysis(stn, words):
     sorted_activation.sort(reverse = True)
     #print(sorted_activation)
 
-    color_list1 = []
-    for node in C_net:
-        color_list1.append(math.log(activation_recorder[0, node_list.index(node)]))
-
-
     color_list = []
-    for node in C_net:
-        scale = -math.log2(np.amin(activation_recorder))
-        color = str(hex(round(255*(- math.log2(activation_recorder[0, node_list.index(node)]))/scale)))[2:]
-        if color == '0':
-            color_list.append('#ff0000')
-        else:
-            color_list.append('#ff'+color+color)
+    for node in c_net:
+        color_list.append(math.log(activation_recorder[0, node_list.index(node)]))
+
 
     #print(color_list)
 
-    stn.plot_network(color_list1)
+    net.plot_network(color_list)
     plt.show()
