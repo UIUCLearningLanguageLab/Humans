@@ -26,6 +26,7 @@ def activation_dispersion_measure():
     for human in the_world.human_list:
         words,Steve = human.get_activated_words()
         linear_Doug = STN.Dg(human.linear_corpus)
+        Steve.plot_network()
         STN_analysis.activation_spreading_analysis(Steve, words)
         STN_analysis.activation_spreading_analysis(linear_Doug, words)
 

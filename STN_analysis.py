@@ -168,5 +168,5 @@ def activation_spreading_analysis(net, words):
 
     #print(color_list)
 
-    net.plot_network(color_list)
+    net.plot_lexical_network(color_list)
     plt.show()

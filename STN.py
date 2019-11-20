@@ -436,19 +436,20 @@ class Stn:
 
     ###########################################################################################
 
-    # ploting the STN, together with the neighbor-net and the constituent-net
-    def plot_network(self, color_list):
+    # ploting the STN,
+    def plot_network(self):
         steven = self.network[2]
-        steven_constituent = self.constituent_net
-
-        plt.subplot(121)
         plt.title('syntax tree network', loc= 'center')
         pos = graphviz_layout(steven, prog='dot')
         edges = steven.edges()
         weights = [steven[u][v]['weight'] for u, v in edges]
         nx.draw(steven, pos, with_labels=True, width = weights)
+        plt.show()
 
-        plt.subplot(122)
+
+    # together with the neighbor-net and the constituent-net
+    def plot_lexical_network(self, color_list):
+        steven_constituent = self.constituent_net
         plt.title('lexical network with activation dispersion on STN', loc= 'center')
         vmin = min(color_list)
         vmax = max(color_list)
@@ -581,7 +582,7 @@ class Dg:
 
         return weighted_network_edge, network_node_list, linear_doug, word_dict, diamond_list, final_freq_dict
 
-    def plot_network(self, color_list):
+    def plot_lexical_network(self, color_list):
         linear_doug = self.network[2]
         plt.title('lexical network with activation dispersion on linear graph', loc= 'center')
         vmin = min(color_list)
