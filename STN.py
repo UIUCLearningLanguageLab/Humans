@@ -453,8 +453,8 @@ class Stn:
         plt.title('lexical network with activation dispersion on STN', loc= 'center')
         vmin = min(color_list)
         vmax = max(color_list)
-        cmap = plt.cm.plasma
-        nx.draw(steven_constituent, with_labels=True, node_color=color_list, cmap= cmap)
+        cmap = plt.cm.cool
+        nx.draw(steven_constituent, with_labels=True, node_color=color_list, cmap= cmap, font_color='black')
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
         sm._A = []
         plt.colorbar(sm)
@@ -587,7 +587,7 @@ class Dg:
         plt.title('lexical network with activation dispersion on linear graph', loc= 'center')
         vmin = min(color_list)
         vmax = max(color_list)
-        cmap = plt.cm.plasma
+        cmap = plt.cm.cool
         nx.draw(linear_doug, with_labels=True, node_color=color_list, cmap= cmap)
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
         sm._A = []
