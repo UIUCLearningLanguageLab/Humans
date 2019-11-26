@@ -19,6 +19,8 @@ from nltk.corpus import wordnet
 from operator import itemgetter
 from networkx.drawing.nx_agraph import graphviz_layout
 
+VERBOSE = False
+
 ############################################################################################
 
 badwords = set(stopwords.words('english'))
@@ -212,7 +214,8 @@ class Stn:
             if count >= 100:
                 count = 0
                 epoch = epoch + 100
-                print("{} sentences added to the network.".format(epoch))
+                if VERBOSE:
+                    print("{} sentences added to the network.".format(epoch))
         end_time = time.time()
         time_joining_trees = end_time - start_time
         steven = nx.DiGraph()
@@ -227,26 +230,29 @@ class Stn:
         weighted_network_edge = []
         for edge in network_edge_dict:
             weighted_network_edge.append(edge + (math.log10(network_edge_dict[edge]+1),))
-        print()
-        print('Weighted Edges:')
-        for edge in weighted_network_edge:
-            print(network_node_list.index(edge[0]), network_node_list.index(edge[1]), edge)
-        print()
+        if VERBOSE:
+            print()
+            print('Weighted Edges:')
+            for edge in weighted_network_edge:
+                print(network_node_list.index(edge[0]), network_node_list.index(edge[1]), edge)
+            print()
         steven.add_weighted_edges_from(weighted_network_edge)
-        print()
-        print('{} used to join the trees.'.format(time_joining_trees))
-        print()
-        print('Nodes in the network:')
-        for node in network_node_list:
-            print(network_node_list.index(node), node)
-        print()
-        print(len(word_dict),word_dict)
-        print()
+        if VERBOSE:
+            print()
+            print('{} used to join the trees.'.format(time_joining_trees))
+            print()
+            print('Nodes in the network:')
+            for node in network_node_list:
+                print(network_node_list.index(node), node)
+            print()
+            print(len(word_dict),word_dict)
+            print()
         final_freq_dict = {}
         for word in freq_dict:
             if freq_dict[word] >= self.freq_threshold:
                 final_freq_dict[word] = freq_dict[word]
-        print(len(final_freq_dict))
+        if VERBOSE:
+            print(len(final_freq_dict))
 
         return weighted_network_edge, network_node_list, steven, word_dict, diamond_list, final_freq_dict
 
@@ -349,13 +355,15 @@ class Stn:
             if count >= 100:
                 count = 0
                 epoch = epoch + 100
-                print("{} weights added to the weight matrix.".format(epoch))
+                if VERBOSE:
+                    print("{} weights added to the weight matrix.".format(epoch))
 
         end_time = time.time()
         time_get_w_matrix = end_time - start_time
-        print()
-        print('{} used to get the weight matrix.'.format(time_get_w_matrix))
-        print()
+        if VERBOSE:
+            print()
+            print('{} used to get the weight matrix.'.format(time_get_w_matrix))
+            print()
 
         return weight_matrix, count_matrix
 
@@ -395,13 +403,15 @@ class Stn:
                     if count >= 100:
                         count = 0
                         epoch = epoch + 100
-                        print("{} edges added to the constituent net.".format(epoch))
+                        if VERBOSE:
+                            print("{} edges added to the constituent net.".format(epoch))
 
         end_time = time.time()
         time_get_C_net = end_time - start_time
-        print()
-        print('{} used to get the constituent net.'.format(time_get_C_net))
-        print()
+        if VERBOSE:
+            print()
+            print('{} used to get the constituent net.'.format(time_get_C_net))
+            print()
         return steven_constituent
 
     ###########################################################################################
@@ -550,7 +560,8 @@ class Dg:
             if count >= 1000:
                 count = 0
                 epoch = epoch + 1000
-                print("{} sentences added to the linear graph.".format(epoch))
+                if VERBOSE:
+                    print("{} sentences added to the linear graph.".format(epoch))
         end_time = time.time()
         time_joining_trees = end_time - start_time
         linear_doug = nx.Graph()
@@ -565,20 +576,23 @@ class Dg:
         weighted_network_edge = []
         for edge in network_edge_dict:
             weighted_network_edge.append(edge + (math.log10(network_edge_dict[edge] + 1),))
-        print()
-        print('Weighted Edges:')
-        for edge in weighted_network_edge:
-            print(network_node_list.index(edge[0]), network_node_list.index(edge[1]), edge)
-        print()
+        if VERBOSE:
+            print()
+            print('Weighted Edges:')
+            for edge in weighted_network_edge:
+                print(network_node_list.index(edge[0]), network_node_list.index(edge[1]), edge)
+            print()
         linear_doug.add_weighted_edges_from(weighted_network_edge)
-        print()
-        print('{} used to join the trees.'.format(time_joining_trees))
-        print()
+        if VERBOSE:
+            print()
+            print('{} used to join the trees.'.format(time_joining_trees))
+            print()
         final_freq_dict = {}
         for word in freq_dict:
             if freq_dict[word] >= self.freq_threshold:
                 final_freq_dict[word] = freq_dict[word]
-        print(len(final_freq_dict))
+        if VERBOSE:
+            print(len(final_freq_dict))
 
         return weighted_network_edge, network_node_list, linear_doug, word_dict, diamond_list, final_freq_dict
 

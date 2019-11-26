@@ -8,6 +8,8 @@ import random
 import math
 from scipy.sparse import lil_matrix
 
+VERBOSE = False
+
 def general_analysis(Steven):
     # get the corpus, which is a list of parsed sentences(in the form of embedded lists)
 
@@ -30,34 +32,36 @@ def general_analysis(Steven):
     v_list = Steven.tagged_word['v']
     a_list = Steven.tagged_word['a']
     r_list = Steven.tagged_word['r']
-
-    print()
-    print(w_list)
-    print('{} words in total'.format(len(w_list)))
-    print('{} nouns in total'.format(len(n_list)))
-    print('{} verbs in total'.format(len(v_list)))
-    print('{} adjectives in total'.format(len(a_list)))
-    print('{} adverbs in total'.format(len(r_list)))
-    print()
+    if VERBOSE:
+        print()
+        print(w_list)
+        print('{} words in total'.format(len(w_list)))
+        print('{} nouns in total'.format(len(n_list)))
+        print('{} verbs in total'.format(len(v_list)))
+        print('{} adjectives in total'.format(len(a_list)))
+        print('{} adverbs in total'.format(len(r_list)))
+        print()
 
     # print(diamonds)
 
     # primrary information of the lexical net: num of words, and num of connections.
-    print(C_net.number_of_nodes(), C_net.number_of_edges())
+    if VERBOSE:
+        print(C_net.number_of_nodes(), C_net.number_of_edges())
 
     # sizes of components in the lexical nets, and the distribution of sizes in histogram
-    print('size of components')
+        print('size of components')
     components = [len(c) for c in sorted(nx.connected_components(C_net), key=len, reverse=True)]
-    print(components)
-    print()
+    if VERBOSE:
+        print(components)
+        print()
     degree = nx.degree_histogram(C_net)
     degree_distribution = {}
     for i in range(len(degree)):
         if degree[i] > 0:
             degree_distribution[i + 1] = degree[i]
-
-    print(degree_distribution)
-    print()
+    if VERBOSE:
+        print(degree_distribution)
+        print()
 
     # degree distribution of the nodes in
     degree_dict = {}
@@ -66,8 +70,9 @@ def general_analysis(Steven):
         degree_dict[node] = C_net.degree(node)
 
     sorted_degree_dict = sorted(degree_dict.items(), key=operator.itemgetter(1), reverse=True)
-    print('degree distribution of words in lexical net:')
-    print(sorted_degree_dict)
+    if VERBOSE:
+        print('degree distribution of words in lexical net:')
+        print(sorted_degree_dict)
 
 
     # to see if the distribution of the degrees follows the power law
@@ -117,7 +122,7 @@ def general_analysis(Steven):
     plt.show()
 
 
-def activation_spreading_analysis(net, words):
+def activation_spreading_analysis(net, source, target):
     # Spreading activation to measure the functional distance
 
     W = nx.adjacency_matrix(net.network[2], nodelist = net.network[1])
@@ -144,9 +149,9 @@ def activation_spreading_analysis(net, words):
     activation = np.zeros((1,l),float)
     fired = np.ones((1, l), float)
 
-    for word in words:
-        activation[0, node_list.index(word)] = 1
-        fired[0, node_list.index(word)] = 0
+
+    activation[0, node_list.index(source)] = 1
+    fired[0, node_list.index(source)] = 0
     activation_recorder = activation
 
     while fired.any():
@@ -159,14 +164,21 @@ def activation_spreading_analysis(net, words):
     #print(activation_recorder)
     sorted_activation = activation_recorder.tolist()[0]
     sorted_activation.sort(reverse = True)
-    #print(sorted_activation)
+
 
     color_list = []
     for node in c_net:
         color_list.append(math.log(activation_recorder[0, node_list.index(node)]))
 
-
     #print(color_list)
 
     net.plot_lexical_network(color_list)
-    plt.show()
+    #plt.show()
+
+    semantic_relatedness_dict = {}
+    for word in target:
+        semantic_relatedness_dict[word] = activation_recorder[0, node_list.index(word)]
+
+    return semantic_relatedness_dict
+
+
