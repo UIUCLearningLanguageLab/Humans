@@ -9,6 +9,8 @@ from src import animals
 from src import world
 import STN
 
+VERBOSE = True
+
 class Human:
 
     def __init__(self, world):
@@ -29,7 +31,7 @@ class Human:
         self.idle_count = 0
 
         self.sleepy_rate = 0.05
-        self.speed = random.uniform(10,20)
+        self.speed = random.uniform(50,100)
         self.vision = random.uniform(50,100)
         self.fatigue = None
         self.energy = None
@@ -46,7 +48,7 @@ class Human:
         self.hunger_threshold = 1
         self.thirst_threshold = 0.3
         self.focus = None
-        self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file,1)
+        self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file,0)
         self.hunting_method = self.get_hunting_method()
         self.state_change = self.get_state_change()
         self.drive = ['hunger', 'sleepiness', 'thirst']
@@ -133,8 +135,8 @@ class Human:
                     self.searching()
                 elif event_name == 'going_to':
                     self.going_to()
-                elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping', 'waking_up', 'getting_up',
-                                    'getting_drink','drinking','idling', 'washing'}:
+                elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping',
+                                    'waking_up', 'getting_up','getting_drink','drinking','idling', 'washing'}:
                     self.do_it(event_name)
                 else:
                     self.hunt(event_name)
@@ -142,6 +144,8 @@ class Human:
             elif status == 0:
                 self.current_event = self.current_event[:len(self.current_event)-1]
             else:
+                self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file, 0)
+                self.focus = None
                 self.current_event = ()
 
         elif t.in_degree(self.current_event) != 0:  # currently on branch
@@ -152,11 +156,12 @@ class Human:
 
         else:  # currently on the root
             if status == 0:
-                print('epoch finished')
+                if VERBOSE:
+                    print('epoch finished')
+                    print(self.hunger, self.sleepiness, self.thirst)
                 l = len(self.world.human_list)
                 if self.world.human_list.index(self) == l-1:
                     self.world.epoch = self.world.epoch + 1
-                print(self.hunger, self.sleepiness, self.thirst)
                 self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_file,0)
                 self.focus = None
             else:
@@ -176,19 +181,22 @@ class Human:
         #    print('{} is thirsty.'.format(self.name))
 
         if self.focus is None or event_name == 'searching':
-            #print('{} is {}.'.format(self.name, event_name))
+            print('{} is {}.'.format(self.name, event_name))
             if event_name is not 'idling':
                 self.corpus.append((self.name, event_name))
                 self.linear_corpus.append([self.name, event_name])
         else:
             if isinstance(self.focus, animals.Animal):
                 focus = self.focus.category
-                #print('{} is {} the {}.'.format(self.name, event_name, focus))
+                if VERBOSE:
+                    print('{} is {} the {}.'.format(self.name, event_name, focus))
             else:
                 focus = self.focus
-                #print('{} is {} {}.'.format(self.name, event_name, focus))
+                if VERBOSE:
+                    print('{} is {} {}.'.format(self.name, event_name, focus))
             self.corpus.append((self.name, (event_name, focus)))
             self.linear_corpus.append([self.name,event_name,focus])
+        print(self.hunger, self.sleepiness, self.thirst)
 
     def choose_heir(self):
         t = self.event_tree
@@ -307,30 +315,41 @@ class Human:
         self.hunger = self.hunger + movement * self.state_change['searching'][0]
 
     def going_to(self):
-        dx = self.x - self.focus.x
-        dy = self.y - self.focus.y
-        norm = (dx ** 2 + dy ** 2) ** 0.5
-        dx = dx / norm
-        dy = dy / norm
-        self.x = self.x - dx * self.speed
-        self.y = self.y - dy * self.speed
         d = ((self.x - self.focus.x)**2 + (self.y - self.focus.y)**2)**0.5
-        if d < self.vision:
+        if d <= self.vision:
             self.event_dict[self.current_event][1] = 0
-        self.hunger = self.hunger + self.speed * self.state_change['going_to'][0]
+        else:
+            dx = self.x - self.focus.x
+            dy = self.y - self.focus.y
+            norm = (dx ** 2 + dy ** 2) ** 0.5
+            dx = dx / norm
+            dy = dy / norm
+            if d > self.vision + self.speed:
+                self.x = self.x - dx * self.speed
+                self.y = self.y - dy * self.speed
+                self.hunger = self.hunger + self.speed * self.state_change['going_to'][0]
+            else:
+                self.x = self.focus.x
+                self.y = self.focus.y
+                self.hunger = self.hunger + d * self.state_change['going_to'][0]
+
+
 
     def hunt(self,event_name):
         hunting_skill = self.get_hunting_skill()[0]
-        print(self.focus)
+        #print(self.focus)
         index = self.world.animal_category.index(self.focus.category)
         success_rate = hunting_skill[event_name][index]
         num = np.random.choice(2, 1, p=[1-success_rate, success_rate])
         if num == 1:
             self.event_dict[self.current_event][1] = 0
-            if event_name != 'chasing' and event_name != 'trapping':
+            exception = {'chasing','trapping','waiting'}
+            if event_name not in exception:
                 self.world.animal_list.remove(self.focus)
         else:
             self.event_dict[self.current_event][1] = -1
+            if VERBOSE:
+                print('hunting action failed')
         self.hunger = self.hunger + self.state_change[event_name][0]
 
     def do_it(self,event_name):

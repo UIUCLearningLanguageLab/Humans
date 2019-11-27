@@ -9,7 +9,7 @@ state change as sc: change of state of human, animal and world.
 simple event function
 
 
-f1 trap, catch, chase, stab, shoot, throw : rs, sc, switch
+f1 trap, wait, catch, chase, stab, shoot, throw : rs, sc, switch
 f2 go_to: move, sc, switch
 f3 search: move, cs, sc, switch
 f4 null, gather, butcher, cook, eat, lay_down, asleep, wake_up, get_up: sc, switch
