@@ -7,7 +7,7 @@ import synHAL_analysis
 import numpy as np
 import random
 from src.display import display
-VERBOSE = True
+VERBOSE = False
 window_types = ['forward','backward','summed']
 window_sizes = [2,3,4,5,6,7,8,9]
 window_weights = ['linear','flat']
@@ -101,7 +101,6 @@ def activation_dispersion_measure():
                 recording_matrix[len(window_sizes)][2] = 1
 
         matrices.append(recording_matrix)
-    print(len(matrices))
 
     return matrices
 
@@ -115,4 +114,4 @@ def run_experiments(run_times):
     performance_matrix = performance_matrix/run_times
     print(performance_matrix)
 
-run_experiments(1)
+run_experiments(100)
