@@ -9,7 +9,7 @@ from src import animals
 from src import world
 import STN
 
-VERBOSE = True
+VERBOSE = False
 
 class Human:
 
@@ -181,7 +181,7 @@ class Human:
         #    print('{} is thirsty.'.format(self.name))
 
         if self.focus is None or event_name == 'searching':
-            print('{} is {}.'.format(self.name, event_name))
+            #print('{} is {}.'.format(self.name, event_name))
             if event_name is not 'idling':
                 self.corpus.append((self.name, event_name))
                 self.linear_corpus.append([self.name, event_name])
@@ -196,7 +196,6 @@ class Human:
                     print('{} is {} {}.'.format(self.name, event_name, focus))
             self.corpus.append((self.name, (event_name, focus)))
             self.linear_corpus.append([self.name,event_name,focus])
-        print(self.hunger, self.sleepiness, self.thirst)
 
     def choose_heir(self):
         t = self.event_tree
