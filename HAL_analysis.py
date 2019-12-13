@@ -86,7 +86,8 @@ def get_ppmi_matrix(ww_matrix):
     return ppmi_matrix, pmi_matrix
 
 
-def get_cos_sim(linear_corpus,source,target,encoding):
+
+def get_cos_sim(linear_corpus,source,target,encoding,svd):
     corpus, vocab_list, vocab_index_dict = corpus_transformation(linear_corpus, period)
     #print(corpus)
     #print(vocab_list)
@@ -94,6 +95,8 @@ def get_cos_sim(linear_corpus,source,target,encoding):
 
     final_matrix = create_ww_matrix(vocab_list, vocab_index_dict, corpus, encoding)
     ppmi_matrix, pmi_matrix = get_ppmi_matrix(final_matrix)
+    if svd:
+        ppmi_matrix = np.linalg.svd(ppmi_matrix)[0]
     if VERBOSE:
         print(vocab_list)
     #print(final_matrix)
@@ -115,7 +118,7 @@ def get_cos_sim(linear_corpus,source,target,encoding):
 def main():
     linear_corpus = [['the','dog','chased','the','cat'],['the','cat','chased','the','mouse']]
     cos_sim = get_cos_sim(linear_corpus,'dog',['cat','mouse'],{'window_type':'summed','window_size':3,
-                                                               'window_weight':'flat'})
+                                                               'window_weight':'flat'}, False)
     print(cos_sim)
 
 #main()

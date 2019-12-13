@@ -24,7 +24,7 @@ def create_tree_dict(corpus,linear_corpus):
     return tree_dict, vocab_list, vocab_index_dict
 
 
-def create_ww_matrix(tree_dict, vocab_list, vocab_index_dict, corpus, linear_corpus):  # no function call overhead - twice as fast
+def create_ww_matrix(tree_dict, vocab_list, vocab_index_dict, corpus, linear_corpus, window_weight):  # no function call overhead - twice as fast
     # count
     num_vocab = len(vocab_list)
     count_matrix = np.zeros([num_vocab, num_vocab])
@@ -35,8 +35,13 @@ def create_ww_matrix(tree_dict, vocab_list, vocab_index_dict, corpus, linear_cor
             for j in range(len(sentence)-1-i):
                 if sentence[i] in vocab_index_dict and sentence[j+1+i] in vocab_index_dict:
                     id1,id2 = vocab_list.index(sentence[i]), vocab_list.index(sentence[j+1+i])
-                    dist = 1/nx.shortest_path_length(tree,sentence[i],sentence[j+1+i])
-                    count_matrix[id1,id2] += dist
+                    if window_weight == 'syntax':
+                        dist = 1/nx.shortest_path_length(tree,sentence[i],sentence[j+1+i])
+                        count_matrix[id1,id2] += dist
+                    elif window_weight == 'linear':
+                        count_matrix[id1,id2] += 1
+                    else:
+                        count_matrix[id1,id2] += 1/(j+1)
     final_matrix = count_matrix + count_matrix.transpose()
 
     return final_matrix
@@ -62,10 +67,12 @@ def get_ppmi_matrix(ww_matrix):
     return ppmi_matrix, pmi_matrix
 
 
-def get_cos_sim(corpus,linear_corpus,source,target):
+def get_cos_sim(corpus,linear_corpus,source,target,window_weight,svd):
     tree_dict, vocab_list, vocab_index_dict = create_tree_dict(corpus, linear_corpus)
-    final_matrix = create_ww_matrix(tree_dict, vocab_list, vocab_index_dict, corpus, linear_corpus)
+    final_matrix = create_ww_matrix(tree_dict, vocab_list, vocab_index_dict, corpus, linear_corpus, window_weight)
     ppmi_matrix, pmi_matrix = get_ppmi_matrix(final_matrix)
+    if svd:
+        ppmi_matrix = np.linalg.svd(ppmi_matrix)[0]
     if VERBOSE:
         print(vocab_list)
     #print(final_matrix)

@@ -171,9 +171,9 @@ def activation_spreading_analysis(net, source, target):
         color_list.append(math.log(activation_recorder[0, node_list.index(node)]))
 
     #print(color_list)
-
-    net.plot_lexical_network(color_list)
-    #plt.show()
+    if VERBOSE:
+        net.plot_lexical_network(color_list)
+        plt.show()
 
     semantic_relatedness_dict = {}
     for word in target:
