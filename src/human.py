@@ -59,6 +59,9 @@ class Human:
 
         self.corpus = []
         self.linear_corpus = []
+        self.p_noun = [] #patient nouns
+        self.t_verb = [] #transitive verbs
+        self.t_p_pairs = {} #verb_patient pairs
 
         # action_dict = {'hunt_deer': [A, B, C, D]}
 
@@ -196,6 +199,16 @@ class Human:
                     print('{} is {} {}.'.format(self.name, event_name, focus))
             self.corpus.append((self.name, (event_name, focus)))
             self.linear_corpus.append([self.name,event_name,focus])
+            if focus not in self.p_noun:
+                self.p_noun.append(focus)
+            if event_name not in self.t_verb:
+                self.t_verb.append(event_name)
+            if (event_name,focus) not in self.t_p_pairs:
+                self.t_p_pairs[(event_name,focus)] = 1
+            else:
+                self.t_p_pairs[(event_name,focus)] += 1
+
+
 
     def choose_heir(self):
         t = self.event_tree
