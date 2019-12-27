@@ -15,9 +15,9 @@ window_weights = ['linear','flat']
 
 stv = True
 doug = True
-hal = True
-synhal = True
-senthal = True
+hal = False
+synhal = False
+senthal = False
 
 
 def check_word_in_list(the_list, the_dict):
@@ -60,12 +60,17 @@ def one_ordering_task():
         target = ['rabbit','deer','water']
         testing = target
         testing.append(source)
+
+
         judge = check_word_in_list(testing, word_dict)
 
         recording_matrix = np.zeros((2*len(window_sizes) + 3, len(window_weights) * len(window_types)))
 
         if judge:
+            print('not met')
             break
+
+        target.pop()
 
         if hal:
             for i in range(len(window_sizes)):
@@ -89,7 +94,7 @@ def one_ordering_task():
                 print('semantic relatedness by STN:')
                 print(sl_steve)
             if sl_steve[target[0]] > sl_steve[target[1]] > sl_steve[target[2]]:
-                recording_matrix[len(window_sizes)][0] = 1
+                recording_matrix[2*len(window_sizes)][0] = 1
             reverse_target = [source]
             reverse_relatedness = []
             for word in target:
@@ -105,7 +110,7 @@ def one_ordering_task():
                 print('semantic relatedness by Distributional Graph')
                 print(sl_doug)
             if sl_doug[target[0]] > sl_doug[target[1]] > sl_doug[target[2]]:
-                recording_matrix[len(window_sizes)][2] = 1
+                recording_matrix[2*len(window_sizes)][2] = 1
             reverse_target = [source]
             reverse_relatedness = []
             for word in target:
@@ -137,7 +142,7 @@ def one_ordering_task():
                     print('semantic relatedness by {} Sentential HAL'.format(window_weight))
                     print(sl_senthal)
                 if sl_senthal[target[0]] > sl_senthal[target[1]] > sl_senthal[target[2]]:
-                    recording_matrix[len(window_sizes)+1][window_weights.index(window_weight)+1] = 1
+                    recording_matrix[2*len(window_sizes)+1][window_weights.index(window_weight)+1] = 1
                 sl_senthal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, source, target, window_weight, True)
                 if VERBOSE:
                     print('semantic relatedness by {} Sentential HAL after SVD'.format(window_weight))
@@ -176,6 +181,7 @@ def calculate_rank_matrix(matrix,version):
     for i in range(n):
         occur_list = list(transpose[i])
         rank_matrix[i] = ss.rankdata(occur_list)
+
     return rank_matrix
 
 
@@ -189,6 +195,8 @@ def ordering_task_analysis():
         linear_Doug = STN.Dg(human.linear_corpus)
         p_nouns = human.p_noun
         t_verbs = human.t_verb
+        #print(p_nouns)
+        #print(t_verbs)
         target = p_nouns
         pairs = human.t_p_pairs
         ranking = np.zeros((len(p_nouns),len(t_verbs)))
@@ -197,6 +205,8 @@ def ordering_task_analysis():
             id_predicate = t_verbs.index(phrase[0])
             ranking[id_argument][id_predicate] = pairs[phrase]
         standard_ranking = calculate_rank_matrix(ranking,'standard')
+        #print('standard')
+        #print(standard_ranking)
         recording_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
 
         if hal:
@@ -224,14 +234,17 @@ def ordering_task_analysis():
 
 
         if stv:
-            stv_matrix = ranking
-            stv_re_matrix = ranking
+            stv_matrix = np.zeros((len(p_nouns),len(t_verbs)))
+            stv_re_matrix = np.zeros((len(p_nouns),len(t_verbs)))
             for source in t_verbs:
                 sl_steve = STN_analysis.activation_spreading_analysis(Steve, source, target)
                 for word in target:
                     id1 = p_nouns.index(word)
                     id2 = t_verbs.index(source)
                     stv_matrix[id1][id2] = sl_steve[word]
+            stv_ranking = calculate_rank_matrix(stv_matrix, 'non')
+            #print('STN')
+            #print(stv_ranking)
 
             re_target = t_verbs
             for re_source in p_nouns:
@@ -240,8 +253,10 @@ def ordering_task_analysis():
                     id2 = t_verbs.index(word)
                     id1 = p_nouns.index(re_source)
                     stv_re_matrix[id1][id2] = sl_re_steve[word]
-            stv_ranking = calculate_rank_matrix(stv_matrix,'non')
+
             stv_re_ranking = calculate_rank_matrix(stv_re_matrix,'non')
+            #print('STN reversed')
+            #print(stv_re_ranking)
             corr_stv = np.corrcoef(stv_ranking.flatten(), standard_ranking.flatten())[0][1]
             corr_stv_re = np.corrcoef(stv_re_ranking.flatten(), standard_ranking.flatten())[0][1]
             recording_matrix[2*len(window_sizes)][0] = corr_stv
@@ -249,15 +264,17 @@ def ordering_task_analysis():
 
 
         if doug:
-            doug_matrix = ranking
-            doug_re_matrix = ranking
+            doug_matrix = np.zeros((len(p_nouns),len(t_verbs)))
+            doug_re_matrix = np.zeros((len(p_nouns),len(t_verbs)))
             for source in t_verbs:
                 sl_doug = STN_analysis.activation_spreading_analysis(linear_Doug, source, target)
                 for word in target:
                     id1 = p_nouns.index(word)
                     id2 = t_verbs.index(source)
                     doug_matrix[id1][id2] = sl_doug[word]
-
+            doug_ranking = calculate_rank_matrix(doug_matrix, 'non')
+            #print('distributional graph')
+            #print(doug_ranking)
             re_target = t_verbs
             for re_source in p_nouns:
                 sl_re_doug = STN_analysis.activation_spreading_analysis(linear_Doug, re_source, re_target)
@@ -265,8 +282,11 @@ def ordering_task_analysis():
                     id2 = t_verbs.index(word)
                     id1 = p_nouns.index(re_source)
                     doug_re_matrix[id1][id2] = sl_re_doug[word]
-            doug_ranking = calculate_rank_matrix(doug_matrix, 'non')
+
+
             doug_re_ranking = calculate_rank_matrix(doug_re_matrix, 'non')
+            #print('distributional graph reversed')
+            #print(doug_re_ranking)
             corr_doug = np.corrcoef(doug_ranking.flatten(), standard_ranking.flatten())[0][1]
             corr_doug_re = np.corrcoef(doug_re_ranking.flatten(), standard_ranking.flatten())[0][1]
             recording_matrix[2*len(window_sizes)][2] = corr_doug
@@ -328,4 +348,4 @@ def run_experiments(run_times,experiment):
     print(performance_matrix)
 
 
-run_experiments(100,'ordering_analysis')
+run_experiments(100,'ordering')

@@ -127,9 +127,14 @@ def activation_spreading_analysis(net, source, target):
 
     W = nx.adjacency_matrix(net.network[2], nodelist = net.network[1])
     W.todense()
-    W = lil_matrix(W)
     l = W.shape[0]
-    #print(W)
+
+    if net.network_type == 'stn':
+        c_net = net.constituent_net
+        W = W + np.transpose(W)
+    else:
+        c_net = net.network[2]
+    W = lil_matrix(W)
     normalizer = W.sum(1)
     for i in range(l):
         for j in range(l):
@@ -138,18 +143,9 @@ def activation_spreading_analysis(net, source, target):
             else:
                 W[i,j] = W[i,j]/normalizer[i][0,0]
 
-    if net.network_type == 'stn':
-        c_net = net.constituent_net
-        W = W + np.transpose(W)
-    else:
-        c_net = net.network[2]
-    #print(W)
-
     node_list = net.network[1]
     activation = np.zeros((1,l),float)
     fired = np.ones((1, l), float)
-
-
     activation[0, node_list.index(source)] = 1
     fired[0, node_list.index(source)] = 0
     activation_recorder = activation
@@ -161,10 +157,15 @@ def activation_spreading_analysis(net, source, target):
             if fired[0,i] == 1 and activation[0,i] > 0:
                 fired[0,i] = fired[0,i] - 1
 
-    #print(activation_recorder)
     sorted_activation = activation_recorder.tolist()[0]
-    sorted_activation.sort(reverse = True)
+    sorted_activation.sort(reverse=True)
+    node_dict = {}
 
+    #for node in node_list:
+    #    node_dict[node] = activation_recorder[0,node_list.index(node)]
+    #sorted_dict = {k: v for k, v in sorted(node_dict.items(), key=lambda item: item[1], reverse=True)}
+    #for node in sorted_dict:
+    #    print((node, sorted_dict[node]))
 
     color_list = []
     for node in c_net:
@@ -178,6 +179,7 @@ def activation_spreading_analysis(net, source, target):
     semantic_relatedness_dict = {}
     for word in target:
         semantic_relatedness_dict[word] = activation_recorder[0, node_list.index(word)]
+    #print(semantic_relatedness_dict)
 
     return semantic_relatedness_dict
 

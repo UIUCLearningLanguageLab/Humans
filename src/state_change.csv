@@ -18,5 +18,5 @@ laying_down,0,0,0
 sleeping,0.01,0,0
 waking_up,0,0,0
 getting_up,0,0,0
-getting_drink,0.01,0,0
+pouring,0.01,0,0
 drinking,0,0,0

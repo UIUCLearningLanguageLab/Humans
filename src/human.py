@@ -139,7 +139,7 @@ class Human:
                 elif event_name == 'going_to':
                     self.going_to()
                 elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping',
-                                    'waking_up', 'getting_up','getting_drink','drinking','idling', 'washing'}:
+                                    'waking_up', 'getting_up','pouring','drinking','idling', 'washing'}:
                     self.do_it(event_name)
                 else:
                     self.hunt(event_name)
@@ -227,6 +227,8 @@ class Human:
                     score = new_score
                     event = child
             self.current_event = event
+            if self.current_event == (2,):
+                self.focus = random.choice(self.world.drink_category)
         else:
             hunting_method_dist = []
             index = self.world.animal_category.index(self.focus.category)
@@ -327,24 +329,26 @@ class Human:
         self.hunger = self.hunger + movement * self.state_change['searching'][0]
 
     def going_to(self):
-        d = ((self.x - self.focus.x)**2 + (self.y - self.focus.y)**2)**0.5
-        if d <= self.vision:
-            self.event_dict[self.current_event][1] = 0
-        else:
-            dx = self.x - self.focus.x
-            dy = self.y - self.focus.y
-            norm = (dx ** 2 + dy ** 2) ** 0.5
-            dx = dx / norm
-            dy = dy / norm
-            if d > self.vision + self.speed:
-                self.x = self.x - dx * self.speed
-                self.y = self.y - dy * self.speed
-                self.hunger = self.hunger + self.speed * self.state_change['going_to'][0]
+        if self.focus not in self.world.drink_category:
+            d = ((self.x - self.focus.x)**2 + (self.y - self.focus.y)**2)**0.5
+            if d <= self.vision:
+                self.event_dict[self.current_event][1] = 0
             else:
-                self.x = self.focus.x
-                self.y = self.focus.y
-                self.hunger = self.hunger + d * self.state_change['going_to'][0]
-
+                dx = self.x - self.focus.x
+                dy = self.y - self.focus.y
+                norm = (dx ** 2 + dy ** 2) ** 0.5
+                dx = dx / norm
+                dy = dy / norm
+                if d > self.vision + self.speed:
+                    self.x = self.x - dx * self.speed
+                    self.y = self.y - dy * self.speed
+                    self.hunger = self.hunger + self.speed * self.state_change['going_to'][0]
+                else:
+                    self.x = self.focus.x
+                    self.y = self.focus.y
+                    self.hunger = self.hunger + d * self.state_change['going_to'][0]
+        else:
+            self.event_dict[self.current_event][1] = 0
 
 
     def hunt(self,event_name):
@@ -367,7 +371,8 @@ class Human:
     def do_it(self,event_name):
 
         if event_name == 'gathering':
-            self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
+            if self.focus not in self.world.drink_category:
+                self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
             self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'butchering':
@@ -412,10 +417,6 @@ class Human:
         elif event_name == 'sleeping':
             self.sleep_count = self.sleep_count + 1
             self.sleepiness = 0
-            self.event_dict[self.current_event][1] = 0
-
-        elif event_name == 'getting_drink':
-            self.focus = random.choice(self.world.drink_category)
             self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'drinking':
