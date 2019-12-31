@@ -25,7 +25,8 @@ class Human:
         self.sleepiness = random.uniform(0,0.5)
         self.thirst = random.uniform(0.7,1)
 
-        self.eat_count = 0
+        self.eat_count_meal = 0
+        self.eat_count_fruit = 0
         self.drink_count = 0
         self.sleep_count = 0
         self.idle_count = 0
@@ -139,7 +140,7 @@ class Human:
                 elif event_name == 'going_to':
                     self.going_to()
                 elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping',
-                                    'waking_up', 'getting_up','pouring','drinking','idling', 'washing'}:
+                                    'waking_up', 'getting_up','pouring','drinking','idling', 'washing',}:
                     self.do_it(event_name)
                 else:
                     self.hunt(event_name)
@@ -227,15 +228,21 @@ class Human:
                     score = new_score
                     event = child
             self.current_event = event
-            if self.current_event == (2,):
+            if self.current_event == (2,): #choose the drink to drink
                 self.focus = random.choice(self.world.drink_category)
+
         else:
-            hunting_method_dist = []
-            index = self.world.animal_category.index(self.focus.category)
-            for child in children:
-                hunting_method_dist.append(self.hunting_method[child][index])
-            norm = [float(i) / sum(hunting_method_dist) for i in hunting_method_dist]
-            self.current_event = children[int(np.random.choice(len(children), 1, p=norm)[0])]
+            if self.current_event == (0,0,0,1): #choose hunting method
+                hunting_method_dist = []
+                index = self.world.animal_category.index(self.focus.category)
+                for child in children:
+                    hunting_method_dist.append(self.hunting_method[child][index])
+                norm = [float(i) / sum(hunting_method_dist) for i in hunting_method_dist]
+                self.current_event = children[int(np.random.choice(len(children), 1, p=norm)[0])]
+            else: #choose child uniformly
+                self.current_event = random.choice(children)
+                if self.current_event == (3, 1):  # choose the fruit to eat
+                    self.focus = random.choice(self.world.fruit_category)
         return self.current_event
 
     def compute_scores(self, event):
@@ -329,7 +336,7 @@ class Human:
         self.hunger = self.hunger + movement * self.state_change['searching'][0]
 
     def going_to(self):
-        if self.focus not in self.world.drink_category:
+        if type(self.focus) is not type('1'):
             d = ((self.x - self.focus.x)**2 + (self.y - self.focus.y)**2)**0.5
             if d <= self.vision:
                 self.event_dict[self.current_event][1] = 0
@@ -371,7 +378,7 @@ class Human:
     def do_it(self,event_name):
 
         if event_name == 'gathering':
-            if self.focus not in self.world.drink_category:
+            if type(self.focus) is not type('1') :
                 self.hunger = self.hunger + self.focus.size * self.state_change[event_name][0]
             self.event_dict[self.current_event][1] = 0
 
@@ -407,11 +414,15 @@ class Human:
                 self.dish_list = list(dish_set)
 
         elif event_name == 'eating':
-            self.focus = self.dish_list.pop()
-            self.eat_count = self.eat_count + 1
-            if len(self.dish_list) == 0:
-                self.hunger = self.hunger - self.dish_amount
-                self.sleepiness = self.sleepiness + self.sleepy_rate * self.dish_amount
+            if type(self.focus) is not type('1'):
+                self.focus = self.dish_list.pop()
+                self.eat_count_meal = self.eat_count_meal + 1
+                if len(self.dish_list) == 0:
+                    self.hunger = self.hunger - self.dish_amount
+                    self.sleepiness = self.sleepiness + self.sleepy_rate * self.dish_amount
+                    self.event_dict[self.current_event][1] = 0
+            else:
+                self.eat_count_fruit =self.eat_count_fruit + 1
                 self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'sleeping':

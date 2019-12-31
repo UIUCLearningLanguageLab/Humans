@@ -15,9 +15,9 @@ window_weights = ['linear','flat']
 
 stv = True
 doug = True
-hal = False
-synhal = False
-senthal = False
+hal = True
+synhal = True
+senthal = True
 
 
 def check_word_in_list(the_list, the_dict):
@@ -49,6 +49,11 @@ def one_ordering_task():
     the_world = running_world()
     matrices = []
     for human in the_world.human_list:
+        #print('eat fruit {}'.format(human.eat_count_fruit))
+        #print('eat meal {}'.format(human.eat_count_meal))
+        #print('drink {}'.format(human.drink_count))
+        #print('sleep {}'.format(human.sleep_count))
+        #print('idle {}'.format(human.idle_count))
         corpus = human.corpus
         linear_corpus = human.linear_corpus
         Steve = human.get_activated_words()[1]
@@ -57,7 +62,7 @@ def one_ordering_task():
         if VERBOSE:
             Steve.plot_network()
         source = 'waiting'
-        target = ['rabbit','deer','water']
+        target = ['rabbit','deer','apple','water']
         testing = target
         testing.append(source)
 
@@ -79,10 +84,10 @@ def one_ordering_task():
                         encoding = {'window_size':window_sizes[i], 'window_weight':window_weights[j],
                                     'window_type':window_types[k]}
                         sl_hal = HAL_analysis.get_cos_sim(linear_corpus,source,target,encoding, False)
-                        if sl_hal[target[0]] > sl_hal[target[1]] > sl_hal[target[2]]:
+                        if sl_hal[target[0]] > sl_hal[target[1]] > sl_hal[target[2]]>sl_hal[target[3]]:
                             recording_matrix[2*i][j*len(window_types)+k] = 1
                         sl_hal_svd = HAL_analysis.get_cos_sim(linear_corpus, source, target, encoding, True)
-                        if sl_hal_svd[target[0]] > sl_hal_svd[target[1]] > sl_hal_svd[target[2]]:
+                        if sl_hal_svd[target[0]] > sl_hal_svd[target[1]] > sl_hal_svd[target[2]]> sl_hal_svd[target[3]]:
                             recording_matrix[2*i+1][j * len(window_types) + k] = 1
                         if VERBOSE:
                             print(encoding)
@@ -93,7 +98,7 @@ def one_ordering_task():
             if VERBOSE:
                 print('semantic relatedness by STN:')
                 print(sl_steve)
-            if sl_steve[target[0]] > sl_steve[target[1]] > sl_steve[target[2]]:
+            if sl_steve[target[0]] > sl_steve[target[1]] > sl_steve[target[2]] > sl_steve[target[3]]:
                 recording_matrix[2*len(window_sizes)][0] = 1
             reverse_target = [source]
             reverse_relatedness = []
@@ -101,7 +106,7 @@ def one_ordering_task():
                 reverse_source = word
                 relatedness = STN_analysis.activation_spreading_analysis(Steve, reverse_source, reverse_target)
                 reverse_relatedness.append(relatedness[reverse_target[0]])
-            if reverse_relatedness[0] > reverse_relatedness[1] > reverse_relatedness[2]:
+            if reverse_relatedness[0] > reverse_relatedness[1] > reverse_relatedness[2] > reverse_relatedness[3]:
                 recording_matrix[2*len(window_sizes)][1] = 1
 
         if doug:
@@ -109,7 +114,7 @@ def one_ordering_task():
             if VERBOSE:
                 print('semantic relatedness by Distributional Graph')
                 print(sl_doug)
-            if sl_doug[target[0]] > sl_doug[target[1]] > sl_doug[target[2]]:
+            if sl_doug[target[0]] > sl_doug[target[1]] > sl_doug[target[2]] > sl_doug[target[3]]:
                 recording_matrix[2*len(window_sizes)][2] = 1
             reverse_target = [source]
             reverse_relatedness = []
@@ -117,7 +122,7 @@ def one_ordering_task():
                 reverse_source = word
                 relatedness = STN_analysis.activation_spreading_analysis(linear_Doug, reverse_source, reverse_target)
                 reverse_relatedness.append(relatedness[reverse_target[0]])
-            if reverse_relatedness[0] > reverse_relatedness[1] > reverse_relatedness[2]:
+            if reverse_relatedness[0] > reverse_relatedness[1] > reverse_relatedness[2] > reverse_relatedness[3]:
                 recording_matrix[2*len(window_sizes)][3] = 1
 
         if synhal:
@@ -126,13 +131,13 @@ def one_ordering_task():
             if VERBOSE:
                 print('semantic relatedness by Syntactic HAL')
                 print(sl_synhal)
-            if sl_synhal[target[0]] > sl_synhal[target[1]] > sl_synhal[target[2]]:
+            if sl_synhal[target[0]] > sl_synhal[target[1]] > sl_synhal[target[2]] > sl_synhal[target[3]]:
                 recording_matrix[2*len(window_sizes)+1][0] = 1
             sl_synhal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, source, target, window_weight, True)
             if VERBOSE:
                 print('semantic relatedness by Syntactic HAL after SVD')
                 print(sl_synhal)
-            if sl_synhal_svd[target[0]] > sl_synhal_svd[target[1]] > sl_synhal_svd[target[2]]:
+            if sl_synhal_svd[target[0]] > sl_synhal_svd[target[1]] > sl_synhal_svd[target[2]] > sl_synhal_svd[target[3]]:
                 recording_matrix[2*len(window_sizes) + 2][0] = 1
 
         if senthal:
@@ -141,13 +146,13 @@ def one_ordering_task():
                 if VERBOSE:
                     print('semantic relatedness by {} Sentential HAL'.format(window_weight))
                     print(sl_senthal)
-                if sl_senthal[target[0]] > sl_senthal[target[1]] > sl_senthal[target[2]]:
+                if sl_senthal[target[0]] > sl_senthal[target[1]] > sl_senthal[target[2]] > sl_senthal[target[3]]:
                     recording_matrix[2*len(window_sizes)+1][window_weights.index(window_weight)+1] = 1
                 sl_senthal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, source, target, window_weight, True)
                 if VERBOSE:
                     print('semantic relatedness by {} Sentential HAL after SVD'.format(window_weight))
                     print(sl_senthal_svd)
-                if sl_senthal_svd[target[0]] > sl_senthal_svd[target[1]] > sl_senthal_svd[target[2]]:
+                if sl_senthal_svd[target[0]] > sl_senthal_svd[target[1]] > sl_senthal_svd[target[2]] > sl_senthal_svd[target[3]]:
                     recording_matrix[2*len(window_sizes) + 2][window_weights.index(window_weight) + 1] = 1
 
         matrices.append(recording_matrix)
@@ -204,6 +209,7 @@ def ordering_task_analysis():
             id_argument = p_nouns.index(phrase[1])
             id_predicate = t_verbs.index(phrase[0])
             ranking[id_argument][id_predicate] = pairs[phrase]
+        #print(ranking)
         standard_ranking = calculate_rank_matrix(ranking,'standard')
         #print('standard')
         #print(standard_ranking)
@@ -348,4 +354,4 @@ def run_experiments(run_times,experiment):
     print(performance_matrix)
 
 
-run_experiments(100,'ordering')
+run_experiments(100,'one_task')

@@ -14,8 +14,8 @@ class World:
         self.human_list = []
         self.animal_category = ['rabbit', 'squirrel', 'fox', 'mouflon', 'deer', 'boar', 'ibex', 'bison', 'mammoth',
                                 'auroch']
-        self.fruit_category = ['apple','peach','pear','plum']
-        self.drink_category = ['water','juice','beer','milk']
+        self.fruit_category = ['apple','peach','pear']
+        self.drink_category = ['water','juice','beer']
         self.animal_size = {'rabbit':(3,5), 'squirrel':(1,2), 'fox':(9,19), 'mouflon':(50,100), 'deer':(180,260),
                             'boar':(88,110), 'ibex':(80,150), 'bison':(1800,2200), 'mammoth':(8000,10000),
                                 'auroch':(1000,2000)}
@@ -24,7 +24,7 @@ class World:
         self.food_stored = 0
         self.consumption = []
         self.hunting_method_list = []
-        self.location_list = ['fridge', 'hut', 'fire']
+        self.location_list = ['fridge', 'hut', 'fire','orchard']
         self.epoch = 0
         
     def create_humans(self):
