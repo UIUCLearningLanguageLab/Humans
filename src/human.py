@@ -140,7 +140,7 @@ class Human:
                 elif event_name == 'going_to':
                     self.going_to()
                 elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping',
-                                    'waking_up', 'getting_up','pouring','drinking','idling', 'washing',}:
+                                    'waking_up', 'getting_up','pouring','drinking','idling', 'washing','boiling','peeling'}:
                     self.do_it(event_name)
                 else:
                     self.hunt(event_name)

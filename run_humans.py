@@ -13,11 +13,11 @@ window_types = ['forward','backward','summed']
 window_sizes = [3,5,7,9]
 window_weights = ['linear','flat']
 
-stv = True
-doug = True
+stv = False
+doug = False
 hal = True
-synhal = True
-senthal = True
+synhal = False
+senthal = False
 
 
 def check_word_in_list(the_list, the_dict):
@@ -45,6 +45,14 @@ def running_world():
     return the_world
 
 
+def dict_to_rank(dict):
+    list = []
+    for word in dict:
+        list.append(dict[word])
+    rank = str(ss.rankdata(list))
+    return rank
+
+
 def one_ordering_task():
     the_world = running_world()
     matrices = []
@@ -70,6 +78,7 @@ def one_ordering_task():
         judge = check_word_in_list(testing, word_dict)
 
         recording_matrix = np.zeros((2*len(window_sizes) + 3, len(window_weights) * len(window_types)))
+        subjective_matrix = np.zeros((2*len(window_sizes) + 3, len(window_weights) * len(window_types)))
 
         if judge:
             print('not met')
@@ -77,18 +86,58 @@ def one_ordering_task():
 
         target.pop()
 
+        p_nouns = target
+        t_verbs = human.t_verb
+        # print(p_nouns)
+        # print(t_verbs)
+        pairs = {}
+        for noun in p_nouns:
+            for verb in t_verbs:
+                if (verb,noun) in human.t_p_pairs:
+                    pairs[(verb,noun)] = human.t_p_pairs[(verb,noun)]
+        ranking = np.zeros((len(p_nouns), len(t_verbs)))
+        for phrase in pairs:
+            id_argument = p_nouns.index(phrase[1])
+            id_predicate = t_verbs.index(phrase[0])
+            ranking[id_argument][id_predicate] = pairs[phrase]
+        # print(ranking)
+        standard_ranking = calculate_rank_matrix(ranking, 'standard')
+
+        single_ranking = standard_ranking[t_verbs.index(source)]
+        #print(single_ranking)
+        num_correct = 0
+        if single_ranking[0] > single_ranking[1] > single_ranking[2] > single_ranking[3]:
+            num_correct = 1
+        #else:
+        #    print(ranking)
+
+
+        sim_source = target[0]
+        sim_target = target
+
         if hal:
             for i in range(len(window_sizes)):
                 for j in range(len(window_weights)):
                     for k in range(len(window_types)):
                         encoding = {'window_size':window_sizes[i], 'window_weight':window_weights[j],
                                     'window_type':window_types[k]}
+
+                        #sim_hal = HAL_analysis.get_cos_sim(linear_corpus,sim_source,sim_target,encoding, False)
+
                         sl_hal = HAL_analysis.get_cos_sim(linear_corpus,source,target,encoding, False)
-                        if sl_hal[target[0]] > sl_hal[target[1]] > sl_hal[target[2]]>sl_hal[target[3]]:
+                        if dict_to_rank(sl_hal) == str(single_ranking):
                             recording_matrix[2*i][j*len(window_types)+k] = 1
+                        sim_hal = HAL_analysis.get_cos_sim(linear_corpus, sim_source, sim_target, encoding, False)
+                        if dict_to_rank(sl_hal) == dict_to_rank(sim_hal):
+                            subjective_matrix[2 * i][j * len(window_types) + k] = 1
+
                         sl_hal_svd = HAL_analysis.get_cos_sim(linear_corpus, source, target, encoding, True)
-                        if sl_hal_svd[target[0]] > sl_hal_svd[target[1]] > sl_hal_svd[target[2]]> sl_hal_svd[target[3]]:
+                        if dict_to_rank(sl_hal_svd) == str(single_ranking):
                             recording_matrix[2*i+1][j * len(window_types) + k] = 1
+                        sim_hal_svd = HAL_analysis.get_cos_sim(linear_corpus, sim_source, sim_target, encoding, True)
+                        if dict_to_rank(sl_hal_svd) == dict_to_rank(sim_hal_svd):
+                            subjective_matrix[2 * i + 1][j * len(window_types) + k] = 1
+
                         if VERBOSE:
                             print(encoding)
                             print(sl_hal)
@@ -98,32 +147,53 @@ def one_ordering_task():
             if VERBOSE:
                 print('semantic relatedness by STN:')
                 print(sl_steve)
-            if sl_steve[target[0]] > sl_steve[target[1]] > sl_steve[target[2]] > sl_steve[target[3]]:
+            if dict_to_rank(sl_steve) == str(single_ranking):
                 recording_matrix[2*len(window_sizes)][0] = 1
-            reverse_target = [source]
-            reverse_relatedness = []
+
+            sim_steve = STN_analysis.activation_spreading_analysis(Steve, sim_source, sim_target)
+            if dict_to_rank(sl_steve) == dict_to_rank(sim_steve):
+                subjective_matrix[2*len(window_sizes)][0] = 1
+
+
+            reverse_target = [source,target[0]]
+            reverse_relatedness = {}
+            reverse_sim = {}
             for word in target:
                 reverse_source = word
                 relatedness = STN_analysis.activation_spreading_analysis(Steve, reverse_source, reverse_target)
-                reverse_relatedness.append(relatedness[reverse_target[0]])
-            if reverse_relatedness[0] > reverse_relatedness[1] > reverse_relatedness[2] > reverse_relatedness[3]:
+                reverse_relatedness[word] = relatedness[reverse_target[0]]
+                reverse_sim[word] = relatedness[reverse_target[1]]
+            if dict_to_rank(reverse_relatedness) == str(single_ranking):
                 recording_matrix[2*len(window_sizes)][1] = 1
+            if dict_to_rank(reverse_relatedness) == dict_to_rank(reverse_sim):
+                subjective_matrix[2*len(window_sizes)][1] = 1
+
 
         if doug:
             sl_doug = STN_analysis.activation_spreading_analysis(linear_Doug, source, target)
             if VERBOSE:
                 print('semantic relatedness by Distributional Graph')
                 print(sl_doug)
-            if sl_doug[target[0]] > sl_doug[target[1]] > sl_doug[target[2]] > sl_doug[target[3]]:
+            if dict_to_rank(sl_doug) == str(single_ranking):
                 recording_matrix[2*len(window_sizes)][2] = 1
-            reverse_target = [source]
-            reverse_relatedness = []
+
+            sim_doug = STN_analysis.activation_spreading_analysis(linear_Doug, sim_source, sim_target)
+            if dict_to_rank(sl_doug) == dict_to_rank(sim_doug):
+                subjective_matrix[2*len(window_sizes)][2] = 1
+
+            reverse_target = [source, target[0]]
+            reverse_relatedness = {}
+            reverse_sim = {}
             for word in target:
                 reverse_source = word
                 relatedness = STN_analysis.activation_spreading_analysis(linear_Doug, reverse_source, reverse_target)
-                reverse_relatedness.append(relatedness[reverse_target[0]])
-            if reverse_relatedness[0] > reverse_relatedness[1] > reverse_relatedness[2] > reverse_relatedness[3]:
+                reverse_relatedness[word]= relatedness[reverse_target[0]]
+                reverse_sim[word] = relatedness[reverse_target[1]]
+            if dict_to_rank(reverse_relatedness) == str(single_ranking):
                 recording_matrix[2*len(window_sizes)][3] = 1
+            if dict_to_rank(reverse_relatedness) == dict_to_rank(reverse_sim):
+                subjective_matrix[2*len(window_sizes)][3] = 1
+
 
         if synhal:
             window_weight = 'syntax'
@@ -131,14 +201,25 @@ def one_ordering_task():
             if VERBOSE:
                 print('semantic relatedness by Syntactic HAL')
                 print(sl_synhal)
-            if sl_synhal[target[0]] > sl_synhal[target[1]] > sl_synhal[target[2]] > sl_synhal[target[3]]:
+            if dict_to_rank(sl_synhal) == str(single_ranking):
                 recording_matrix[2*len(window_sizes)+1][0] = 1
+
+            sim_synhal = synHAL_analysis.get_cos_sim(corpus, linear_corpus, sim_source, sim_target, window_weight, False)
+            if dict_to_rank(sl_synhal) == dict_to_rank(sim_synhal):
+                subjective_matrix[2*len(window_sizes)+1][0] = 1
+
+
             sl_synhal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, source, target, window_weight, True)
             if VERBOSE:
                 print('semantic relatedness by Syntactic HAL after SVD')
                 print(sl_synhal)
-            if sl_synhal_svd[target[0]] > sl_synhal_svd[target[1]] > sl_synhal_svd[target[2]] > sl_synhal_svd[target[3]]:
+            if dict_to_rank(sl_synhal_svd) == str(single_ranking):
                 recording_matrix[2*len(window_sizes) + 2][0] = 1
+
+            sim_synhal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, sim_source, sim_target, window_weight,
+                                                     True)
+            if dict_to_rank(sl_synhal_svd) == dict_to_rank(sim_synhal_svd):
+                subjective_matrix[2 * len(window_sizes) + 2][0] = 1
 
         if senthal:
             for window_weight in window_weights:
@@ -146,18 +227,31 @@ def one_ordering_task():
                 if VERBOSE:
                     print('semantic relatedness by {} Sentential HAL'.format(window_weight))
                     print(sl_senthal)
-                if sl_senthal[target[0]] > sl_senthal[target[1]] > sl_senthal[target[2]] > sl_senthal[target[3]]:
+                if dict_to_rank(sl_senthal) == str(single_ranking):
                     recording_matrix[2*len(window_sizes)+1][window_weights.index(window_weight)+1] = 1
+
+                sim_senthal = synHAL_analysis.get_cos_sim(corpus, linear_corpus, sim_source, sim_target, window_weight,
+                                                         False)
+                if dict_to_rank(sl_senthal) == dict_to_rank(sim_senthal):
+                    subjective_matrix[2 * len(window_sizes) + 1][window_weights.index(window_weight)+1] = 1
+
+
                 sl_senthal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, source, target, window_weight, True)
                 if VERBOSE:
                     print('semantic relatedness by {} Sentential HAL after SVD'.format(window_weight))
                     print(sl_senthal_svd)
-                if sl_senthal_svd[target[0]] > sl_senthal_svd[target[1]] > sl_senthal_svd[target[2]] > sl_senthal_svd[target[3]]:
+                if dict_to_rank(sl_senthal_svd) == str(single_ranking):
                     recording_matrix[2*len(window_sizes) + 2][window_weights.index(window_weight) + 1] = 1
 
-        matrices.append(recording_matrix)
+                sim_senthal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, sim_source, sim_target, window_weight,
+                                                          True)
+                if dict_to_rank(sl_senthal_svd) == dict_to_rank(sim_senthal_svd):
+                    subjective_matrix[2 * len(window_sizes) + 2][window_weights.index(window_weight) + 1] = 1
 
-    return matrices
+        matrices.append(recording_matrix)
+        matrices.append(subjective_matrix)
+
+    return matrices, num_correct
 
 
 def calculate_rank_matrix(matrix,version):
@@ -342,16 +436,25 @@ def ordering_task_analysis():
 
 
 def run_experiments(run_times,experiment):
-    performance_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
+    objective_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
+    subjective_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
+    objective_count = 0
     for i in range(run_times):
         if experiment == 'one_task':
-            performance_matrix += one_ordering_task()[0]
+            a,b = one_ordering_task()
+            objective_matrix += a[0]
+            subjective_matrix += a[1]
+            objective_count += b
         else:
-            performance_matrix += ordering_task_analysis()[0]
+            objective_matrix += ordering_task_analysis()[0]
         if i % 5 == 0:
             print('{} turns run'.format(i))
-    performance_matrix = performance_matrix/run_times
-    print(performance_matrix)
+    objective_matrix = objective_matrix/run_times
+    subjective_matrix = subjective_matrix/run_times
+    objective_rate = objective_count/run_times
+    print(objective_matrix)
+    print(subjective_matrix)
+    print(objective_rate)
 
 
-run_experiments(100,'one_task')
+run_experiments(10,'one_task')

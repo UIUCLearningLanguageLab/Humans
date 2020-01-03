@@ -19,4 +19,6 @@ sleeping,0.01,0,0
 waking_up,0,0,0
 getting_up,0,0,0
 pouring,0.01,0,0
+boiling,0.01,0,0
 drinking,0,0,0
+peeling,0.01,0,0
