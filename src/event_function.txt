@@ -1,4 +1,11 @@
+All simple events are terminate nodes in the event tree, and some actual things happen on these nodes. That means, we
+need to define actual functions for each single simple events, theoretically, we need to write function for every single
+simple event. However, for lots of simple events, they share some more fundamental operations. Thus we write the function
+for each simple events as a specific combination of more fundamental simple-event functions.
+
+
 simple-event functions
+
 random sampling as rs: random sampling from certain distribution, by following formula, number = 'sampling_term'
 move: move some distance in some direction
 switch: decide if turn off the switch by following event-finish criteria
@@ -6,8 +13,7 @@ compute score as cs: computing some score by following formula, score = 'scoring
 make decision as md: comparing scores or comparing a score with a threshold, using following formula if eval('decision_formula')
 state change as sc: change of state of human, animal and world.
 
-simple event function
-
+simple event:
 
 f1 trap, wait, catch, chase, stab, shoot, throw : rs, sc, switch
 f2 go_to: move, sc, switch

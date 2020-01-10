@@ -6,7 +6,18 @@ import math
 VERBOSE = False
 
 
-def create_tree_dict(corpus,linear_corpus):
+########################################################################################################################
+# In sentHAL, co-occurrence count is carried out within sentence boundary, which is the co-occurrence of words within a
+# sentence. Therefore, the only relevant model parameter is window weight, while window length varies by the size of
+# sentence, and window type is ignored
+
+# In synHAL, similar to sentHAL, count co-occurrence within a sentence. Instead of count the co-occurrence flat or
+# linearly, the sentences are parsed into constituent trees and the co-occurrence is the inverse of the distance on the
+# tree
+########################################################################################################################
+
+def create_tree_dict(corpus,linear_corpus):  # to encode the syntactical distance, first draw the constituent tree of
+    # from the linear text
     tree_dict = {}
     vocab_list = []
     vocab_index_dict = {}
@@ -24,8 +35,8 @@ def create_tree_dict(corpus,linear_corpus):
     return tree_dict, vocab_list, vocab_index_dict
 
 
-def create_ww_matrix(tree_dict, vocab_list, vocab_index_dict, corpus, linear_corpus, window_weight):  # no function call overhead - twice as fast
-    # count
+def create_ww_matrix(tree_dict, vocab_list, vocab_index_dict, corpus, linear_corpus, window_weight):  # if window weight
+    # is 'syntax', use the syntactic count, otherwise, use linear or flat
     num_vocab = len(vocab_list)
     count_matrix = np.zeros([num_vocab, num_vocab])
     for sentence in linear_corpus:
@@ -38,7 +49,7 @@ def create_ww_matrix(tree_dict, vocab_list, vocab_index_dict, corpus, linear_cor
                     if window_weight == 'syntax':
                         dist = 1/nx.shortest_path_length(tree,sentence[i],sentence[j+1+i])
                         count_matrix[id1,id2] += dist
-                    elif window_weight == 'linear':
+                    elif window_weight == 'flat':
                         count_matrix[id1,id2] += 1
                     else:
                         count_matrix[id1,id2] += 1/(j+1)
@@ -75,8 +86,8 @@ def get_cos_sim(corpus,linear_corpus,source,target,window_weight,svd):
         ppmi_matrix = np.linalg.svd(ppmi_matrix)[0]
     if VERBOSE:
         print(vocab_list)
-    #print(final_matrix)
-    #print(pmi_matrix)
+    # print(final_matrix)
+    # print(pmi_matrix)
     cos_sim = {}
     v1 = ppmi_matrix[vocab_index_dict[source]]
     if VERBOSE:

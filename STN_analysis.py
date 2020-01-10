@@ -10,28 +10,23 @@ from scipy.sparse import lil_matrix
 
 VERBOSE = False
 
-def general_analysis(Steven):
-    # get the corpus, which is a list of parsed sentences(in the form of embedded lists)
 
-    # generate the STN corresponding to the network
-
-
-
+########################################################################################################################
+#  The following is a function for general analysis of a corpus and the STN generated from the corpus, which is more
+#  meaningful when the corpus comes from naturalistic data. For artificially generated corpus, the information of the
+#  corpus is part of the design, thus the analysis become less necessary
+########################################################################################################################
+def general_analysis(steven):
 
     # generate the lexical network out of the STN
-    C_net = Steven.constituent_net
-
-    # generate some word lists to test the distance
-    #word_list1 = ['milk', 'juice', 'tea', 'apple', 'peanut', 'potato', 'pear', 'tomato', 'carrot', 'noodle']
-    #word_list2 = ['mommy', 'daddy', 'baby', 'doctor', 'teacher', 'farmer', 'girl', 'boy', 'grandma', 'mama']
-    #word_list3 = ['dog', 'rabbit', 'squirrel', 'alligator', 'duck', 'goat', 'cat', 'chicken', 'horse', 'piggie']
+    C_net = steven.constituent_net
 
     # get the nouns, verbs, adjs and advs and show their numbers.
-    w_list = Steven.word_list
-    n_list = Steven.tagged_word['n']
-    v_list = Steven.tagged_word['v']
-    a_list = Steven.tagged_word['a']
-    r_list = Steven.tagged_word['r']
+    w_list = steven.word_list
+    n_list = steven.tagged_word['n']
+    v_list = steven.tagged_word['v']
+    a_list = steven.tagged_word['a']
+    r_list = steven.tagged_word['r']
     if VERBOSE:
         print()
         print(w_list)
@@ -44,7 +39,7 @@ def general_analysis(Steven):
 
     # print(diamonds)
 
-    # primrary information of the lexical net: num of words, and num of connections.
+    # primary information of the lexical net: num of words, and num of connections.
     if VERBOSE:
         print(C_net.number_of_nodes(), C_net.number_of_edges())
 
@@ -74,52 +69,24 @@ def general_analysis(Steven):
         print('degree distribution of words in lexical net:')
         print(sorted_degree_dict)
 
-
     # to see if the distribution of the degrees follows the power law
     x = range(len(degree))
     y = [z / float(sum(degree)) for z in degree]
     plt.loglog(x, y, color='blue', linewidth=2)
-
-    ##########################################################################
-
-    # get the distances(relatedness) between the testing word list
-
-    #time1 = time.time()
-
-    #table1, matrix1 = Steven.compute_distance_matrix(word_list1, word_list2)
-    #table2, matrix2 = Steven.compute_distance_matrix(word_list1, word_list3)
-    #table3, matrix3 = Steven.compute_distance_matrix(word_list2, word_list3)
-
-    #mean1 = matrix1.mean()
-    #std1 = matrix1.std()
-    #mean2 = matrix2.mean()
-    #std2 = matrix2.std()
-    #mean3 = matrix3.mean()
-    #std3 = matrix3.std()
-    # table2, matrix2= Steven.compute_similarity_matrix(w_list,1)
-
-    #time2 = time.time()
-    #print('Relatedness Matrix')
-    #print(table1)
-    #print(mean1, std1)
-    #print()
-    #print(table2)
-    #print(mean2, std2)
-    #print()
-    #print(table3)
-    #print(mean3, std3)
-    #print()
-    #time_used = time2 - time1
-    #print('{} used for caculating the relatedness'.format(time_used))
-    #print()
-
-
-    # nx.draw(steven_adj, with_labels=True)
-    # print('Similarity matrix')
-    # print(table2)
-
-    # nx.draw(C_net, with_labels=True)
     plt.show()
+
+########################################################################################################################
+#  activation spreading as a measure for semantic relatedness on STN and other graphical semantic models
+#  it measures the functional distance instead of the structure distance on a network, by taking account of both the
+#  structure distance and the relative strength of the connections in the network.
+
+#  activation spreading is modeled by matrix multiplication: where a vector recording the current activation level of
+#  each node get multiplied by the normalized weight matrix (of edges)
+#  the semantic relatedness from node A to B, denoted be Re(A,B), is the amount of the activation that first transmitted
+#  to B from A, where A is the only activated node initially, and during the spreading, at every moment, the nodes with
+#  positive activation level sends out all its activation to its neighbors proportinal to the weights of the connections
+#  to those neighbors
+########################################################################################################################
 
 
 def activation_spreading_analysis(net, source, target):
@@ -161,17 +128,17 @@ def activation_spreading_analysis(net, source, target):
     sorted_activation.sort(reverse=True)
     node_dict = {}
 
-    #for node in node_list:
+    #  for node in node_list:
     #    node_dict[node] = activation_recorder[0,node_list.index(node)]
-    #sorted_dict = {k: v for k, v in sorted(node_dict.items(), key=lambda item: item[1], reverse=True)}
-    #for node in sorted_dict:
+    #  sorted_dict = {k: v for k, v in sorted(node_dict.items(), key=lambda item: item[1], reverse=True)}
+    #  for node in sorted_dict:
     #    print((node, sorted_dict[node]))
 
     color_list = []
     for node in c_net:
         color_list.append(math.log(activation_recorder[0, node_list.index(node)]))
 
-    #print(color_list)
+    #  print(color_list)
     if VERBOSE:
         net.plot_lexical_network(color_list)
         plt.show()
@@ -179,7 +146,7 @@ def activation_spreading_analysis(net, source, target):
     semantic_relatedness_dict = {}
     for word in target:
         semantic_relatedness_dict[word] = activation_recorder[0, node_list.index(word)]
-    #print(semantic_relatedness_dict)
+    #  print(semantic_relatedness_dict)
 
     return semantic_relatedness_dict
 

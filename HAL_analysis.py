@@ -1,5 +1,4 @@
 import math
-
 import numpy as np
 from cytoolz import itertoolz
 
@@ -8,7 +7,7 @@ VERBOSE = False
 period = True
 
 
-def corpus_transformation(linear_corpus, period):
+def corpus_transformation(linear_corpus, period_mark):  # list of sentence into list of words, for spatial models
     corpus = []
     vocab_index_dict = {}
     vocab_list = []
@@ -19,12 +18,16 @@ def corpus_transformation(linear_corpus, period):
                 l = len(vocab_list)
                 vocab_index_dict[word] = l
                 vocab_list.append(word)
-        if period:
+        if period_mark:
             corpus.append('.')
-    if period:
+    if period_mark:
         vocab_list.append('.')
         vocab_index_dict['.'] = len(vocab_list)-1
     return corpus, vocab_list, vocab_index_dict
+
+########################################################################################################################
+# HAL co-occurence count, varied by window type, window size and window weight
+########################################################################################################################
 
 
 def create_ww_matrix(vocab_list, vocab_index_dict, tokens, encoding):  # no function call overhead - twice as fast
@@ -42,7 +45,7 @@ def create_ww_matrix(vocab_list, vocab_index_dict, tokens, encoding):  # no func
 
     windows = itertoolz.sliding_window(window_size + 1, tokens)  # + 1 because window consists of t2s only
     for window in windows:
-        #print(window)
+        # print(window)
         if window[0] in vocab_index_dict:
             for i in range(window_size):
                 if window[i+1] in vocab_index_dict:
@@ -62,11 +65,11 @@ def create_ww_matrix(vocab_list, vocab_index_dict, tokens, encoding):  # no func
         final_matrix = np.concatenate((count_matrix, count_matrix.transpose()), axis=1)
     else:
         raise AttributeError('Invalid arg to "window_type".')
-    #print('Shape of normalized matrix={}'.format(final_matrix.shape))
+    #  print('Shape of normalized matrix={}'.format(final_matrix.shape))
     return final_matrix
 
 
-def get_ppmi_matrix(ww_matrix):
+def get_ppmi_matrix(ww_matrix):  # get ppmi martix from co-occurrence matrix
     size = ww_matrix.shape
     ppmi_matrix = np.zeros(size)
     pmi_matrix = np.zeros(size)
@@ -84,7 +87,6 @@ def get_ppmi_matrix(ww_matrix):
                 ppmi_matrix[i][j] = 0
                 pmi_matrix[i][j] = 0
     return ppmi_matrix, pmi_matrix
-
 
 
 def get_cos_sim(linear_corpus,source,target,encoding,svd):

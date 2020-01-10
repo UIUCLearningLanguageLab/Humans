@@ -13,11 +13,11 @@ window_types = ['forward','backward','summed']
 window_sizes = [3,5,7,9]
 window_weights = ['linear','flat']
 
-stv = False
-doug = False
+stv = True
+doug = True
 hal = True
-synhal = False
-senthal = False
+synhal = True
+senthal = True
 
 
 def check_word_in_list(the_list, the_dict):
@@ -29,7 +29,7 @@ def check_word_in_list(the_list, the_dict):
     return judge
 
 
-def running_world():
+def running_world():  # running the world and get the corpus
     the_world = world.World()
     the_world.create_humans()
     the_world.create_animals()
@@ -52,31 +52,56 @@ def dict_to_rank(dict):
     rank = str(ss.rankdata(list))
     return rank
 
+########################################################################################################################
+# objective and subjective one-ordering task
+# the semantic models have to rank the syntagmatic relatedness between one verb(trap) vs several nouns
+# (rabbit,deer,apple,water), and the ranking is evaluated by comparing to an objective key(objective task)or a
+# subjective key(subjective task)
+
+# the key of objective task is obtained by manually binding the paradigmatic relation and the syntagmatic relation
+# basing on the corpus
+
+# the key of subjective task is the models' ranking of the paradigmatic relations
+
+# all spatial models are tested with, or without svd transformation
+# all graphical models are tested with two direction semantic relatedness, notice that both Re(trap, rabbit), and
+# Re(rabbit, trap) tell something about the relatedness between trap and rabbit, currently, there are empirical studies
+# showing that the relations is asymmetric, and which is also true in the measure implementation, meanwhile, there is no
+# theoretical account for one direction precedes over the other, thus we use both directions in the relatedness measures
+# that is, when comparing the relatedness between trap with rabbit and apple, we compare from both directions:
+# Re(trap, rabbit) vs Re(trap, deer), adn also Re(rabbit, trap) vs Re(deer, trap).
+
+# graphical models use activation-spreading to measure the semantic relatedness, while spatial models compute the
+# cosine similarity from the ppmi matrix.
+
+########################################################################################################################
+
 
 def one_ordering_task():
     the_world = running_world()
     matrices = []
     for human in the_world.human_list:
-        #print('eat fruit {}'.format(human.eat_count_fruit))
-        #print('eat meal {}'.format(human.eat_count_meal))
-        #print('drink {}'.format(human.drink_count))
-        #print('sleep {}'.format(human.sleep_count))
-        #print('idle {}'.format(human.idle_count))
+        # print('eat fruit {}'.format(human.eat_count_fruit))
+        # print('eat meal {}'.format(human.eat_count_meal))
+        # print('drink {}'.format(human.drink_count))
+        # print('sleep {}'.format(human.sleep_count))
+        # print('idle {}'.format(human.idle_count))
         corpus = human.corpus
         linear_corpus = human.linear_corpus
-        Steve = human.get_activated_words()[1]
-        word_dict = Steve.word_dict
+        steve = human.get_activated_words()[1]
+        word_dict = steve.word_dict
         linear_Doug = STN.Dg(human.linear_corpus)
         if VERBOSE:
-            Steve.plot_network()
-        source = 'waiting'
-        target = ['rabbit','deer','apple','water']
+            steve.plot_network()
+        source = 'trapping'
+        target = ['rabbit','deer','apple','water']  # the nouns, where rabbit co-occur with the source verb, others
+        # don't, but has closer or farther paradigmatic relatedness rabbit
         testing = target
         testing.append(source)
 
+        judge = check_word_in_list(testing, word_dict) # to see if the targets and the source are in the corpus
 
-        judge = check_word_in_list(testing, word_dict)
-
+        # generating the matrix to record evaluation scores
         recording_matrix = np.zeros((2*len(window_sizes) + 3, len(window_weights) * len(window_types)))
         subjective_matrix = np.zeros((2*len(window_sizes) + 3, len(window_weights) * len(window_types)))
 
@@ -101,16 +126,15 @@ def one_ordering_task():
             id_predicate = t_verbs.index(phrase[0])
             ranking[id_argument][id_predicate] = pairs[phrase]
         # print(ranking)
-        standard_ranking = calculate_rank_matrix(ranking, 'standard')
+        standard_ranking = calculate_rank_matrix(ranking, 'standard') # get the objective key
 
         single_ranking = standard_ranking[t_verbs.index(source)]
-        #print(single_ranking)
+        # print(single_ranking)
         num_correct = 0
         if single_ranking[0] > single_ranking[1] > single_ranking[2] > single_ranking[3]:
             num_correct = 1
-        #else:
+        # else:
         #    print(ranking)
-
 
         sim_source = target[0]
         sim_target = target
@@ -121,8 +145,6 @@ def one_ordering_task():
                     for k in range(len(window_types)):
                         encoding = {'window_size':window_sizes[i], 'window_weight':window_weights[j],
                                     'window_type':window_types[k]}
-
-                        #sim_hal = HAL_analysis.get_cos_sim(linear_corpus,sim_source,sim_target,encoding, False)
 
                         sl_hal = HAL_analysis.get_cos_sim(linear_corpus,source,target,encoding, False)
                         if dict_to_rank(sl_hal) == str(single_ranking):
@@ -143,14 +165,14 @@ def one_ordering_task():
                             print(sl_hal)
                             print(sl_hal_svd)
         if stv:
-            sl_steve = STN_analysis.activation_spreading_analysis(Steve, source, target)
+            sl_steve = STN_analysis.activation_spreading_analysis(steve, source, target)
             if VERBOSE:
                 print('semantic relatedness by STN:')
                 print(sl_steve)
             if dict_to_rank(sl_steve) == str(single_ranking):
                 recording_matrix[2*len(window_sizes)][0] = 1
 
-            sim_steve = STN_analysis.activation_spreading_analysis(Steve, sim_source, sim_target)
+            sim_steve = STN_analysis.activation_spreading_analysis(steve, sim_source, sim_target)
             if dict_to_rank(sl_steve) == dict_to_rank(sim_steve):
                 subjective_matrix[2*len(window_sizes)][0] = 1
 
@@ -160,7 +182,7 @@ def one_ordering_task():
             reverse_sim = {}
             for word in target:
                 reverse_source = word
-                relatedness = STN_analysis.activation_spreading_analysis(Steve, reverse_source, reverse_target)
+                relatedness = STN_analysis.activation_spreading_analysis(steve, reverse_source, reverse_target)
                 reverse_relatedness[word] = relatedness[reverse_target[0]]
                 reverse_sim[word] = relatedness[reverse_target[1]]
             if dict_to_rank(reverse_relatedness) == str(single_ranking):
@@ -282,6 +304,21 @@ def calculate_rank_matrix(matrix,version):
         rank_matrix[i] = ss.rankdata(occur_list)
 
     return rank_matrix
+
+########################################################################################################################
+# generalized objective ordering task
+# similar to the one-ordering task, the generalized task generalize the ranking task to all verbs in the corpus, and for
+# each verb, it is generalized to the ranking over all nouns.
+
+# for each verb, all nouns are ranked with respective to their syntagmatic relatedness to that verb
+
+# the objective ranking is formed by first ranking the noun(s) having syntagmatic relations to the verb by co-occur
+# frequency and then rank the nouns without syntagmatic relations after the co-occurred nouns, by their mean similarity
+# (paradigmatic relatedness) to the co-occurred nouns
+
+# each model carry out the semantic relatedness task and get the rankings for all verbs, and then correlated to the
+# objective rank
+########################################################################################################################
 
 
 def ordering_task_analysis():
@@ -411,7 +448,6 @@ def ordering_task_analysis():
             recording_matrix[2*len(window_sizes) + 1][0] = corr_synhal
             recording_matrix[2*len(window_sizes) + 2][0] = corr_synhal_svd
 
-
         if senthal:
             for window_weight in window_weights:
                 senthal_matrix = ranking
@@ -457,4 +493,4 @@ def run_experiments(run_times,experiment):
     print(objective_rate)
 
 
-run_experiments(10,'one_task')
+run_experiments(100,'ordering')
