@@ -1,5 +1,5 @@
 import numpy as np
-import STN
+from src import STN
 import networkx as nx
 import math
 

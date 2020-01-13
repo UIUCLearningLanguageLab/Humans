@@ -1,13 +1,8 @@
-from src import world
+from src import world, HAL_analysis, STN, STN_analysis, synHAL_analysis
 from src import config
-import STN_analysis
-import STN
-import HAL_analysis
-import synHAL_analysis
 import numpy as np
 import scipy.stats as ss
-import random
-from src.display import display
+
 VERBOSE = False
 window_types = ['forward','backward','summed']
 window_sizes = [3,5,7,9]
@@ -146,7 +141,7 @@ def one_ordering_task():
                         encoding = {'window_size':window_sizes[i], 'window_weight':window_weights[j],
                                     'window_type':window_types[k]}
 
-                        sl_hal = HAL_analysis.get_cos_sim(linear_corpus,source,target,encoding, False)
+                        sl_hal = HAL_analysis.get_cos_sim(linear_corpus, source, target, encoding, False)
                         if dict_to_rank(sl_hal) == str(single_ranking):
                             recording_matrix[2*i][j*len(window_types)+k] = 1
                         sim_hal = HAL_analysis.get_cos_sim(linear_corpus, sim_source, sim_target, encoding, False)
@@ -239,7 +234,7 @@ def one_ordering_task():
                 recording_matrix[2*len(window_sizes) + 2][0] = 1
 
             sim_synhal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, sim_source, sim_target, window_weight,
-                                                     True)
+                                                         True)
             if dict_to_rank(sl_synhal_svd) == dict_to_rank(sim_synhal_svd):
                 subjective_matrix[2 * len(window_sizes) + 2][0] = 1
 
@@ -253,7 +248,7 @@ def one_ordering_task():
                     recording_matrix[2*len(window_sizes)+1][window_weights.index(window_weight)+1] = 1
 
                 sim_senthal = synHAL_analysis.get_cos_sim(corpus, linear_corpus, sim_source, sim_target, window_weight,
-                                                         False)
+                                                          False)
                 if dict_to_rank(sl_senthal) == dict_to_rank(sim_senthal):
                     subjective_matrix[2 * len(window_sizes) + 1][window_weights.index(window_weight)+1] = 1
 
@@ -266,7 +261,7 @@ def one_ordering_task():
                     recording_matrix[2*len(window_sizes) + 2][window_weights.index(window_weight) + 1] = 1
 
                 sim_senthal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, sim_source, sim_target, window_weight,
-                                                          True)
+                                                              True)
                 if dict_to_rank(sl_senthal_svd) == dict_to_rank(sim_senthal_svd):
                     subjective_matrix[2 * len(window_sizes) + 2][window_weights.index(window_weight) + 1] = 1
 
@@ -355,7 +350,7 @@ def ordering_task_analysis():
                         hal_matrix = ranking
                         hal_svd_matrix = ranking
                         for source in t_verbs:
-                            sl_hal = HAL_analysis.get_cos_sim(linear_corpus,source,target,encoding, False)
+                            sl_hal = HAL_analysis.get_cos_sim(linear_corpus, source, target, encoding, False)
                             sl_hal_svd = HAL_analysis.get_cos_sim(linear_corpus, source, target, encoding, True)
                             for word in target:
                                 id1 = p_nouns.index(word)
@@ -493,4 +488,4 @@ def run_experiments(run_times,experiment):
     print(objective_rate)
 
 
-run_experiments(100,'ordering')
+run_experiments(1,'one_task')

@@ -1,13 +1,9 @@
 import random 
-from src import config
-import operator
-import stats
+from src import config, STN
 import csv
 import numpy as np
 from src import event_tree as et
 from src import animals
-from src import world
-import STN
 
 VERBOSE = False
 

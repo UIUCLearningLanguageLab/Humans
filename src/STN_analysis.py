@@ -1,10 +1,8 @@
 # This module carries out analysis of Stns.
-import STN
 import networkx as nx
 import matplotlib.pyplot as plt
 import operator
 import numpy as np
-import random
 import math
 from scipy.sparse import lil_matrix
 
