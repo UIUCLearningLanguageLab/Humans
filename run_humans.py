@@ -30,8 +30,8 @@ def running_world():  # running the world and get the corpus
     the_world.create_animals()
     for i in range(config.World.num_turn):
         the_world.next_turn()
-    #the_display = display.Display(the_world)
-    #the_display.root.mainloop()
+    # the_display = display.Display(the_world)
+    # the_display.root.mainloop()
     num_consumed_animal = config.World.num_animals - len(the_world.animal_list)
     if VERBOSE:
         print('{} animals consumed.'.format(num_consumed_animal))
