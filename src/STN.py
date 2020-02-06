@@ -598,7 +598,7 @@ class Dg:
 
     def plot_lexical_network(self, color_list):
         linear_doug = self.network[2]
-        plt.title('lexical network with activation dispersion on linear graph', loc= 'center')
+        plt.title('lexical network with activation dispersion on distributional graph', loc= 'center')
         vmin = min(color_list)
         vmax = max(color_list)
         cmap = plt.cm.cool
