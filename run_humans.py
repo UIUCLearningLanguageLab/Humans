@@ -2,17 +2,37 @@ from src import world, HAL_analysis, STN, STN_analysis, synHAL_analysis
 from src import config
 import numpy as np
 import scipy.stats as ss
+import csv
+import matplotlib.pyplot as plt
+import math
 
 VERBOSE = False
-window_types = ['forward','backward','summed']
-window_sizes = [3,5,7,9]
+window_types = ['forward','summed']
+window_sizes = [9]
 window_weights = ['linear','flat']
+exp_length = 50
 
-stv = True
+stv = False
 doug = True
 hal = True
-synhal = True
-senthal = True
+synhal = False
+senthal = False
+
+
+def get_num_model():
+    num_model = 0
+    if stv:
+        num_model = num_model + 2
+    if doug:
+        num_model = num_model + 2
+    if synhal:
+        num_model = num_model + 2
+    if senthal:
+        num_model = num_model + 2 * len(window_weights)
+    if hal:
+        num_model = num_model + 2 * len(window_weights) * len(window_sizes) * len(window_types)
+    return num_model
+
 
 
 def check_word_in_list(the_list, the_dict):
@@ -93,7 +113,6 @@ def one_ordering_task():
         # don't, but has closer or farther paradigmatic relatedness rabbit
         testing = target
         testing.append(source)
-
         judge = check_word_in_list(testing, word_dict) # to see if the targets and the source are in the corpus
 
         # generating the matrix to record evaluation scores
@@ -102,6 +121,8 @@ def one_ordering_task():
 
         if judge:
             print('not met')
+            matrices.append(recording_matrix)
+            matrices.append(subjective_matrix)
             break
 
         target.pop()
@@ -125,9 +146,7 @@ def one_ordering_task():
 
         single_ranking = standard_ranking[t_verbs.index(source)]
         # print(single_ranking)
-        num_correct = 0
-        if single_ranking[0] > single_ranking[1] > single_ranking[2] > single_ranking[3]:
-            num_correct = 1
+
         # else:
         #    print(ranking)
 
@@ -170,8 +189,6 @@ def one_ordering_task():
             sim_steve = STN_analysis.activation_spreading_analysis(steve, sim_source, sim_target)
             if dict_to_rank(sl_steve) == dict_to_rank(sim_steve):
                 subjective_matrix[2*len(window_sizes)][0] = 1
-
-
             reverse_target = [source,target[0]]
             reverse_relatedness = {}
             reverse_sim = {}
@@ -184,7 +201,6 @@ def one_ordering_task():
                 recording_matrix[2*len(window_sizes)][1] = 1
             if dict_to_rank(reverse_relatedness) == dict_to_rank(reverse_sim):
                 subjective_matrix[2*len(window_sizes)][1] = 1
-
 
         if doug:
             sl_doug = STN_analysis.activation_spreading_analysis(linear_Doug, source, target)
@@ -268,7 +284,7 @@ def one_ordering_task():
         matrices.append(recording_matrix)
         matrices.append(subjective_matrix)
 
-    return matrices, num_correct
+    return matrices
 
 
 def calculate_rank_matrix(matrix,version):
@@ -316,16 +332,71 @@ def calculate_rank_matrix(matrix,version):
 ########################################################################################################################
 
 
+def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model, svd):
+    num_category = 3
+    animals = []
+    fruits = []
+    drinks = []
+    for noun in p_nouns:
+        if noun in the_world.animal_category:
+            animals.append(noun)
+        elif noun in the_world.fruit_category:
+            fruits.append(noun)
+        else:
+            drinks.append(noun)
+    category_nouns = animals + fruits + drinks
+    categories = [animals, fruits, drinks]
+    noun_sim_matrix = np.zeros((len(p_nouns), len(p_nouns)-1))
+    within_between = [np.array([0]),np.array([0])]
+    for i in range(len(p_nouns)):
+        noun = category_nouns[i]
+        if model == 'hal':
+            sim_noun = HAL_analysis.get_cos_sim(linear_corpus, noun, category_nouns, encoding, svd)
+        elif model == 'spatial':
+            sim_noun = synHAL_analysis.get_cos_sim(corpus, linear_corpus, noun, category_nouns, window_weights, svd)
+        else:
+            sim_noun = STN_analysis.activation_spreading_analysis(corpus,noun,category_nouns)
+        for j in range(len(p_nouns)-1):
+            target_noun = category_nouns[j]
+            if target_noun != noun:
+                noun_sim_matrix[i][j] = sim_noun[target_noun]
+    #print(model)
+    #print(noun_sim_matrix)
+
+    category_sim_matrix = np.zeros((num_category, num_category))
+    for i in range(num_category):
+        r_s = category_nouns.index(categories[i][0])
+        r_e = category_nouns.index(categories[i][-1])
+        for j in range(num_category):
+            c_s = category_nouns.index(categories[j][0])
+            c_e = category_nouns.index(categories[j][-1])
+            if i == j:
+                sub_matrix = noun_sim_matrix[r_s:r_e + 1, c_s:c_e].flatten()
+                within_between[0] = np.concatenate((within_between[0],sub_matrix),0)
+            else:
+                sub_matrix = noun_sim_matrix[r_s:r_e + 1, c_s:c_e + 1].flatten()
+                within_between[1] = np.concatenate((within_between[1],sub_matrix),0)
+            category_sim_matrix[i][j] = sub_matrix.mean()
+    within_between[0] = within_between[0][1:]
+    within_between[1] = within_between[1][1:]
+    within_between = [(within_between[0].mean(),within_between[0].std()/math.sqrt(len(within_between[0]))),
+                      (within_between[1].mean(),within_between[1].std()/math.sqrt(len(within_between[1])))]
+    return category_sim_matrix, within_between
+
+
 def ordering_task_analysis():
     the_world = running_world()
     matrices = []
     for human in the_world.human_list:
         corpus = human.corpus
+        num_sentence = len(corpus)
         linear_corpus = human.linear_corpus
         Steve = human.get_activated_words()[1]
         linear_Doug = STN.Dg(human.linear_corpus)
         p_nouns = human.p_noun
+
         t_verbs = human.t_verb
+        rank_size = len(p_nouns) * len(t_verbs)
         #print(p_nouns)
         #print(t_verbs)
         target = p_nouns
@@ -337,9 +408,18 @@ def ordering_task_analysis():
             ranking[id_argument][id_predicate] = pairs[phrase]
         #print(ranking)
         standard_ranking = calculate_rank_matrix(ranking,'standard')
+        flat_standard = standard_ranking.flatten().reshape(rank_size,1)
+        flat_item = []
+        for verb in t_verbs:
+            for noun in p_nouns:
+                phrase = verb + '_' + noun
+                flat_item.append(phrase)
         #print('standard')
         #print(standard_ranking)
         recording_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
+        data_matrix = flat_standard
+        category_sim = []
+        within_between = []
 
         if hal:
             for i in range(len(window_sizes)):
@@ -347,8 +427,9 @@ def ordering_task_analysis():
                     for k in range(len(window_types)):
                         encoding = {'window_size':window_sizes[i], 'window_weight':window_weights[j],
                                     'window_type':window_types[k]}
-                        hal_matrix = ranking
-                        hal_svd_matrix = ranking
+                        hal_matrix = np.zeros((len(p_nouns),len(t_verbs)))
+                        hal_svd_matrix = np.zeros((len(p_nouns),len(t_verbs)))
+
                         for source in t_verbs:
                             sl_hal = HAL_analysis.get_cos_sim(linear_corpus, source, target, encoding, False)
                             sl_hal_svd = HAL_analysis.get_cos_sim(linear_corpus, source, target, encoding, True)
@@ -359,10 +440,19 @@ def ordering_task_analysis():
                                 hal_svd_matrix[id1][id2] = sl_hal_svd[word]
                         hal_ranking = calculate_rank_matrix(hal_matrix,'non')
                         hal_svd_ranking = calculate_rank_matrix(hal_svd_matrix,'non')
+                        flat_hal = hal_ranking.flatten().reshape((rank_size,1))
+                        flat_hal_svd = hal_svd_ranking.flatten().reshape((rank_size,1))
+                        data_matrix = np.concatenate((data_matrix,flat_hal),1)
+                        data_matrix = np.concatenate((data_matrix,flat_hal_svd),1)
                         corr_hal = np.corrcoef(hal_ranking.flatten(),standard_ranking.flatten())[0][1]
                         corr_hal_svd = np.corrcoef(hal_svd_ranking.flatten(),standard_ranking.flatten())[0][1]
                         recording_matrix[2 * i][j * len(window_types) + k] = corr_hal
                         recording_matrix[2 * i + 1][j * len(window_types) + k] = corr_hal_svd
+                        category_sim_matrix, within_between_dict = get_category_sim(p_nouns, the_world, None,
+                                                                                    linear_corpus, encoding,
+                                                                                    'hal', False)
+                        category_sim.append(category_sim_matrix)
+                        within_between.append(within_between_dict)
 
 
         if stv:
@@ -387,12 +477,20 @@ def ordering_task_analysis():
                     stv_re_matrix[id1][id2] = sl_re_steve[word]
 
             stv_re_ranking = calculate_rank_matrix(stv_re_matrix,'non')
+            flat_stv = stv_ranking.flatten().reshape((rank_size, 1))
+            flat_stv_re = stv_re_ranking.flatten().reshape((rank_size, 1))
+            data_matrix = np.concatenate((data_matrix, flat_stv), 1)
+            data_matrix = np.concatenate((data_matrix, flat_stv_re), 1)
             #print('STN reversed')
             #print(stv_re_ranking)
             corr_stv = np.corrcoef(stv_ranking.flatten(), standard_ranking.flatten())[0][1]
             corr_stv_re = np.corrcoef(stv_re_ranking.flatten(), standard_ranking.flatten())[0][1]
             recording_matrix[2*len(window_sizes)][0] = corr_stv
             recording_matrix[2*len(window_sizes)][1] = corr_stv_re
+            category_sim_matrix, within_between_dict = get_category_sim(p_nouns, the_world, Steve, None, None,
+                                                   'doug', None)
+            category_sim.append(category_sim_matrix)
+            within_between.append(within_between_dict)
 
 
         if doug:
@@ -417,16 +515,24 @@ def ordering_task_analysis():
 
 
             doug_re_ranking = calculate_rank_matrix(doug_re_matrix, 'non')
+            flat_doug = doug_ranking.flatten().reshape((rank_size, 1))
+            flat_doug_re = doug_re_ranking.flatten().reshape((rank_size, 1))
+            data_matrix = np.concatenate((data_matrix, flat_doug), 1)
+            data_matrix = np.concatenate((data_matrix, flat_doug_re), 1)
             #print('distributional graph reversed')
             #print(doug_re_ranking)
             corr_doug = np.corrcoef(doug_ranking.flatten(), standard_ranking.flatten())[0][1]
             corr_doug_re = np.corrcoef(doug_re_ranking.flatten(), standard_ranking.flatten())[0][1]
             recording_matrix[2*len(window_sizes)][2] = corr_doug
             recording_matrix[2*len(window_sizes)][3] = corr_doug_re
+            category_sim_matrix, within_between_dict = get_category_sim(p_nouns, the_world, linear_Doug, None, None,
+                                                        'doug', None)
+            category_sim.append(category_sim_matrix)
+            within_between.append(within_between_dict)
 
         if synhal:
-            synhal_matrix = ranking
-            synhal_svd_matrix = ranking
+            synhal_matrix = np.zeros((len(p_nouns),len(t_verbs)))
+            synhal_svd_matrix = np.zeros((len(p_nouns),len(t_verbs)))
             window_weight = 'syntax'
             for source in t_verbs:
                 sl_synhal = synHAL_analysis.get_cos_sim(corpus, linear_corpus, source, target, window_weight, False)
@@ -438,54 +544,153 @@ def ordering_task_analysis():
                     synhal_svd_matrix[id1][id2] = sl_synhal_svd[word]
             synhal_ranking = calculate_rank_matrix(synhal_matrix, 'non')
             synhal_svd_ranking = calculate_rank_matrix(synhal_svd_matrix, 'non')
+            flat_synhal = synhal_ranking.flatten().reshape((rank_size, 1))
+            flat_synhal_svd = synhal_svd_ranking.flatten().reshape((rank_size, 1))
+            data_matrix = np.concatenate((data_matrix, flat_synhal), 1)
+            data_matrix = np.concatenate((data_matrix, flat_synhal_svd), 1)
             corr_synhal = np.corrcoef(synhal_ranking.flatten(), standard_ranking.flatten())[0][1]
             corr_synhal_svd = np.corrcoef(synhal_svd_ranking.flatten(), standard_ranking.flatten())[0][1]
             recording_matrix[2*len(window_sizes) + 1][0] = corr_synhal
             recording_matrix[2*len(window_sizes) + 2][0] = corr_synhal_svd
+            category_sim_matrix, within_between_dict = get_category_sim(p_nouns, the_world, corpus, linear_corpus,
+                                                                        window_weight,'spatial', False)
+            category_sim.append(category_sim_matrix)
+            within_between.append(within_between_dict)
 
         if senthal:
             for window_weight in window_weights:
-                senthal_matrix = ranking
-                senthal_svd_matrix = ranking
+                senthal_matrix = np.zeros((len(p_nouns),len(t_verbs)))
+                senthal_svd_matrix = np.zeros((len(p_nouns),len(t_verbs)))
                 for source in t_verbs:
                     sl_senthal = synHAL_analysis.get_cos_sim(corpus, linear_corpus, source, target, window_weight, False)
                     sl_senthal_svd = synHAL_analysis.get_cos_sim(corpus, linear_corpus, source, target, window_weight, True)
+                    id2 = t_verbs.index(source)
                     for word in target:
                         id1 = p_nouns.index(word)
-                        id2 = t_verbs.index(source)
                         senthal_matrix[id1][id2] = sl_senthal[word]
                         senthal_svd_matrix[id1][id2] = sl_senthal_svd[word]
+
                 senthal_ranking = calculate_rank_matrix(senthal_matrix, 'non')
                 senthal_svd_ranking = calculate_rank_matrix(senthal_svd_matrix, 'non')
+                flat_senthal = senthal_ranking.flatten().reshape((rank_size, 1))
+                flat_senthal_svd = senthal_svd_ranking.flatten().reshape((rank_size, 1))
+                data_matrix = np.concatenate((data_matrix, flat_senthal), 1)
+                data_matrix = np.concatenate((data_matrix, flat_senthal_svd), 1)
                 corr_senthal = np.corrcoef(senthal_ranking.flatten(), standard_ranking.flatten())[0][1]
                 corr_senthal_svd = np.corrcoef(senthal_svd_ranking.flatten(), standard_ranking.flatten())[0][1]
                 recording_matrix[2*len(window_sizes) + 1][window_weights.index(window_weight) + 1] = corr_senthal
                 recording_matrix[2*len(window_sizes) + 2][window_weights.index(window_weight) + 1] = corr_senthal_svd
+                category_sim_matrix, within_between_dict = get_category_sim(p_nouns, the_world, corpus, linear_corpus,
+                                                                            window_weight,'spatial', False)
+                category_sim.append(category_sim_matrix)
+                within_between.append(within_between_dict)
 
-        matrices.append(recording_matrix)
+        matrices.append((recording_matrix,data_matrix,flat_item,category_sim, within_between, num_sentence))
+
     return matrices
 
 
-def run_experiments(run_times,experiment):
+def bar_graph(group1,group2,bar_width,x_ticks,y_label):
+    bars1 = group1[0]
+    yer1 = group1[1]
+    bars2 = group2[0]
+    yer2 = group2[1]
+    r1 = np.arange(len(bars1))
+    r2 = [x + bar_width for x in r1]
+    plt.bar(r1, bars1, width=bar_width, color='blue', edgecolor='black', yerr=yer1, capsize=7, label=group1[2])
+    plt.bar(r2, bars2, width=bar_width, color='cyan', edgecolor='black', yerr=yer2, capsize=7, label=group2[2])
+    plt.xticks([r + bar_width/2 for r in range(len(bars1))], x_ticks)
+    plt.ylabel(y_label)
+    plt.legend()
+    plt.show()
+
+
+def run_experiments(length,experiment):
     objective_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
     subjective_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
     objective_count = 0
-    for i in range(run_times):
+    for i in range(length):
         if experiment == 'one_task':
-            a,b = one_ordering_task()
+            a = one_ordering_task()
             objective_matrix += a[0]
             subjective_matrix += a[1]
-            objective_count += b
         else:
-            objective_matrix += ordering_task_analysis()[0]
+            objective_matrix += ordering_task_analysis()[0][0]
         if i % 5 == 0:
             print('{} turns run'.format(i))
-    objective_matrix = objective_matrix/run_times
-    subjective_matrix = subjective_matrix/run_times
-    objective_rate = objective_count/run_times
+    objective_matrix = objective_matrix/length
+    subjective_matrix = subjective_matrix/length
+    objective_rate = objective_count/length
     print(objective_matrix)
-    print(subjective_matrix)
-    print(objective_rate)
+    # print(subjective_matrix)
+    # print(objective_rate)
 
 
-run_experiments(1,'one_task')
+def run_experiments_order(length):
+    num = get_num_model()
+    objective_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
+    category_sim = []
+    within_between = []
+    corr_spatial = []
+    corr_graphical = []
+    num_sentence = []
+    for i in range(num):
+        category_sim.append( np.zeros((3,3)))
+        within_between.append([])
+    with open('data.csv', 'w', newline= '') as csvfile:
+        fieldnames = ['Subject','Item','Key']
+        for i in range(num):
+            model = 'M'+str(i)
+            fieldnames.append(model)
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for i in range(length):
+            if i % 5 == 0:
+                print('{} turns run'.format(i))
+            corr_matrix, next_matrix, item, sim, w_b, num_sent= ordering_task_analysis()[0]
+            corr_spatial.append(corr_matrix[2*len(window_sizes)-2][len(window_types)-1])
+            corr_graphical.append(corr_matrix[2*len(window_sizes)][2])
+            objective_matrix += corr_matrix
+            num_sentence.append(num_sent)
+            if i == 0:
+                category_sim = sim
+                within_between = w_b
+            num_row = next_matrix.shape[0]
+            for j in range(num_row):
+                row = {}
+                for k in range(num+1):
+                    row[fieldnames[k+2]] = next_matrix[j][k]
+                row['Subject'] = i + 1
+                row['Item'] = item[j]
+                writer.writerow(row)
+        performance = {}
+        objective_matrix = objective_matrix/length
+        num_sentence = (np.array(num_sentence).mean(),np.array(num_sentence).std())
+        print(num_sentence)
+        print(objective_matrix)
+        print('category_sim')
+        print()
+        for matrix in category_sim:
+            print(matrix)
+            print()
+        within = [[within_between[1][0][0],within_between[-1][0][0]],[within_between[1][0][1],
+                                                                         within_between[-1][0][1]],'within category']
+
+        between = [[within_between[1][1][0],within_between[-1][1][0]],[within_between[1][1][1],
+                                                                         within_between[-1][1][1]],'between category']
+        bar_graph(within,between,0.3,['spatial','graphical'],'relatedness')
+        for w_b in within_between:
+            print(w_b)
+            print()
+        corr_g = np.array(corr_graphical)
+        corr_s = np.array(corr_spatial)
+        spatial = [[corr_s.mean()],[corr_s.std()/math.sqrt(length)],'spatial']
+        graphical = [[corr_g.mean()],[corr_g.std()/math.sqrt(length)],'graphical']
+        bar_graph(spatial,graphical,0.05,[' '],'correlation')
+        print(spatial)
+        print(graphical)
+
+    # np.savetxt("performance.csv", objective_matrix, delimiter=",")
+
+
+run_experiments_order(exp_length)
