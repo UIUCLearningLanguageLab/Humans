@@ -287,7 +287,8 @@ def one_ordering_task():
     return matrices
 
 
-def calculate_rank_matrix(matrix,version):
+def calculate_rank_matrix(matrix,version): # get the standard ranking based on linguistic corpus, and get the model
+    # syntagmatic ranking from semantic relatedness output.
     transpose = matrix.transpose()
     (m,n)= matrix.shape
     rank_matrix = np.zeros((n,m))
@@ -316,23 +317,10 @@ def calculate_rank_matrix(matrix,version):
 
     return rank_matrix
 
-########################################################################################################################
-# generalized objective ordering task
-# similar to the one-ordering task, the generalized task generalize the ranking task to all verbs in the corpus, and for
-# each verb, it is generalized to the ranking over all nouns.
 
-# for each verb, all nouns are ranked with respective to their syntagmatic relatedness to that verb
-
-# the objective ranking is formed by first ranking the noun(s) having syntagmatic relations to the verb by co-occur
-# frequency and then rank the nouns without syntagmatic relations after the co-occurred nouns, by their mean similarity
-# (paradigmatic relatedness) to the co-occurred nouns
-
-# each model carry out the semantic relatedness task and get the rankings for all verbs, and then correlated to the
-# objective rank
-########################################################################################################################
-
-
-def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model, svd):
+def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model, svd): # get paradigmatic
+    # relatedness(similarities) between noun pairs, also get mean similarities of noun categories and of within and
+    # between category groups.
     num_category = 3
     animals = []
     fruits = []
@@ -383,6 +371,26 @@ def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model,
                       (within_between[1].mean(),within_between[1].std()/math.sqrt(len(within_between[1])))]
     return category_sim_matrix, within_between
 
+########################################################################################################################
+# generalized objective (syntagmatic) ranking task & paradigmatic categorization task
+
+
+# generalized objective (syntagmatic) ranking task:
+
+# similar to the one-ordering task, the generalized task generalize the ranking task to all verbs in the corpus, and for
+# each verb, it is generalized to the ranking over all nouns.
+# for each verb, all nouns are ranked with respective to their syntagmatic relatedness to that verb
+# the objective ranking is formed by first ranking the noun(s) having syntagmatic relations to the verb by co-occur
+# frequency and then rank the nouns without syntagmatic relations after the co-occurred nouns, by their mean similarity
+# (paradigmatic relatedness) to the co-occurred nouns
+# each model carry out the semantic relatedness task and get the rankings for all verbs, and then correlated to the
+# objective ranking
+
+# paradigmatic categorization task:
+# each model measures the semantic relatedness between all noun pairs, and collapsing the similarities into
+# 'within_category' and 'between_category' groups, where the categories are ad hoc noun categories like 'animal'
+# 'fruit', and 'drink'
+########################################################################################################################
 
 def ordering_task_analysis():
     the_world = running_world()
@@ -604,6 +612,12 @@ def bar_graph(group1,group2,bar_width,x_ticks,y_label):
     plt.legend()
     plt.show()
 
+########################################################################################################################
+# running objective (and subjective) ranking task
+#
+
+########################################################################################################################
+
 
 def run_experiments(length,experiment):
     objective_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
@@ -625,6 +639,12 @@ def run_experiments(length,experiment):
     # print(subjective_matrix)
     # print(objective_rate)
 
+########################################################################################################################
+# running generalized objective ranking task (multiple runs)
+# for each model tested in the task, average correlation score (and SE) are caculated, bargraph plotted.
+
+########################################################################################################################
+
 
 def run_experiments_order(length):
     num = get_num_model()
@@ -637,7 +657,7 @@ def run_experiments_order(length):
     for i in range(num):
         category_sim.append( np.zeros((3,3)))
         within_between.append([])
-    with open('data.csv', 'w', newline= '') as csvfile:
+    with open('data.csv', 'w', newline= '') as csvfile: # save the standard ranking and model rankings in a csv file.
         fieldnames = ['Subject','Item','Key']
         for i in range(num):
             model = 'M'+str(i)
@@ -663,7 +683,6 @@ def run_experiments_order(length):
                 row['Subject'] = i + 1
                 row['Item'] = item[j]
                 writer.writerow(row)
-        performance = {}
         objective_matrix = objective_matrix/length
         num_sentence = (np.array(num_sentence).mean(),np.array(num_sentence).std())
         print(num_sentence)
