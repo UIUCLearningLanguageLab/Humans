@@ -18,7 +18,6 @@ hal = True
 synhal = False
 senthal = False
 
-
 def get_num_model():
     num_model = 0
     if stv:
