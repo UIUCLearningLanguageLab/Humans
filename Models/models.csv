@@ -1,0 +1,5 @@
+Window size,Window type,Window weight,reduction,normalization,spatial similarity
+1,Forward,linear,none,none,distance
+2,Backward,flat,SVD,row,cosine
+7,Summed,,,PPMI,correlation
+sentence,Concatenated,,,,
