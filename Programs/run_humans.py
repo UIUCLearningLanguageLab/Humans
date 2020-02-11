@@ -1,5 +1,5 @@
-from World import world, HAL_analysis, STN, STN_analysis, synHAL_analysis
-from World import config
+from World import world, config
+from Models import HAL_analysis, STN, STN_analysis, synHAL_analysis
 import numpy as np
 import scipy.stats as ss
 import csv

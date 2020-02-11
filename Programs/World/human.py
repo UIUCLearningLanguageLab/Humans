@@ -1,5 +1,6 @@
 import random 
-from World import config, STN
+from World import config
+from Models import STN
 import csv
 import numpy as np
 from World import event_tree as et

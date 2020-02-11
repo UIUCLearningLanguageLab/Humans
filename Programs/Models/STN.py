@@ -1,6 +1,4 @@
 # This module define Stn class
-
-
 import nltk
 import random
 import operator
