@@ -1,5 +1,5 @@
 import networkx as nx
-from World import config
+from Programs.World import config
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_agraph import graphviz_layout
 

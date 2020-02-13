@@ -1,10 +1,12 @@
-import random 
-from World import config
-from Models import STN
 import csv
+import random
+
 import numpy as np
-from World import event_tree as et
-from World import animals
+
+from Programs.Linear_Models import STN
+from Programs.World import animals
+from Programs.World import config
+from Programs.World import event_tree as et
 
 VERBOSE = False
 
@@ -127,7 +129,7 @@ class Human:
     ################################################################################################################
     def get_hunting_skill():
         hunting_skill = {}
-        with open('src/random_sampling.csv') as csv_file:
+        with open('World/random_sampling.csv') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line = 0
             for row in csv_reader:
@@ -147,7 +149,7 @@ class Human:
     ################################################################################################################
     def get_state_change():
         state_change = {}
-        with open('src/state_change.csv') as csv_file:
+        with open('World/state_change.csv') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line = 0
             for row in csv_reader:

@@ -1,5 +1,5 @@
 import numpy as np
-from Models import STN
+from Programs.Linear_Models import STN
 import networkx as nx
 import math
 

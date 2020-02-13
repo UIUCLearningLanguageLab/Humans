@@ -13,4 +13,4 @@ class World:
     num_humans = 1
     num_animals = 100
     num_turn = 10000
-    event_tree_file = 'src/event_tree.txt'
+    event_tree_file = 'World/event_tree.txt'

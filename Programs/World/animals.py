@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from World import config
+from Programs.World import config
 
 
 class Animal:

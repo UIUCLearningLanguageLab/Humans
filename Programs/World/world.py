@@ -1,7 +1,7 @@
 import random
-from World import config
-from World.human import Human
-from World.animals import Animal
+from Programs.World import config
+from Programs.World.human import Human
+from Programs.World.animals import Animal
 
 
 class World:

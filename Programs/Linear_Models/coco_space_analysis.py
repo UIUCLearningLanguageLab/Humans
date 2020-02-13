@@ -29,7 +29,6 @@ def corpus_transformation(linear_corpus, period_mark):  # list of sentence into 
 # HAL co-occurence count, varied by window type, window size and window weight
 ########################################################################################################################
 
-
 def create_ww_matrix(vocab_list, vocab_index_dict, tokens, encoding):  # no function call overhead - twice as fast
     window_type = encoding['window_type']
     window_size = encoding['window_size']
@@ -87,40 +86,3 @@ def get_ppmi_matrix(ww_matrix):  # get ppmi martix from co-occurrence matrix
                 ppmi_matrix[i][j] = 0
                 pmi_matrix[i][j] = 0
     return ppmi_matrix, pmi_matrix
-
-
-def get_cos_sim(linear_corpus,source,target,encoding,svd):
-    corpus, vocab_list, vocab_index_dict = corpus_transformation(linear_corpus, period)
-    #print(corpus)
-    #print(vocab_list)
-    #print(vocab_index_dict)
-
-    final_matrix = create_ww_matrix(vocab_list, vocab_index_dict, corpus, encoding)
-    ppmi_matrix, pmi_matrix = get_ppmi_matrix(final_matrix)
-    if svd:
-        ppmi_matrix = np.linalg.svd(ppmi_matrix)[0]
-    if VERBOSE:
-        print(vocab_list)
-    #print(final_matrix)
-    #print(pmi_matrix)
-    cos_sim = {}
-    v1 = ppmi_matrix[vocab_index_dict[source]]
-    if VERBOSE:
-        print(source)
-        print(v1)
-    for word in target:
-        v2 = ppmi_matrix[vocab_index_dict[word]]
-        if VERBOSE:
-            print(word)
-            print(v2)
-        cos_sim[word]=np.inner(v1,v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
-    return cos_sim
-
-
-def main():
-    linear_corpus = [['the','dog','chased','the','cat'],['the','cat','chased','the','mouse']]
-    cos_sim = get_cos_sim(linear_corpus,'dog',['cat','mouse'],{'window_type':'summed','window_size':3,
-                                                               'window_weight':'flat'}, False)
-    print(cos_sim)
-
-#main()
