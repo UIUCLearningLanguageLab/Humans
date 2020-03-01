@@ -87,30 +87,21 @@ def general_analysis(steven):
 ########################################################################################################################
 
 
-def activation_spreading_analysis(net, source, target):
-    # Spreading activation to measure the functional distance
-
-    W = nx.adjacency_matrix(net.network[2], nodelist = net.network[1])
+def get_adjacency_matrix(net):
+    W = nx.adjacency_matrix(net.network[2], nodelist=net.network[1])
     W.todense()
-    l = W.shape[0]
+    length = W.shape[0]
+    W = W + np.transpose(W)
+    return W,length
 
-    if net.network_type == 'stn':
-        c_net = net.constituent_net
-        W = W + np.transpose(W)
-    else:
-        c_net = net.network[2]
-    W = lil_matrix(W)
-    normalizer = W.sum(1)
-    for i in range(l):
-        for j in range(l):
-            if normalizer[i][0,0] == 0:
-                W[i,j] = 0
-            else:
-                W[i,j] = W[i,j]/normalizer[i][0,0]
 
-    node_list = net.network[1]
-    activation = np.zeros((1,l),float)
-    fired = np.ones((1, l), float)
+def activation_spreading_analysis(adjacency_matrix, source, target, node_list):
+    # Spreading activation to measure the functional distance from source to target
+    # where target and source are single items
+    length = len(node_list)
+    W = lil_matrix(adjacency_matrix)
+    activation = np.zeros((1,length),float)
+    fired = np.ones((1, length), float)
     activation[0, node_list.index(source)] = 1
     fired[0, node_list.index(source)] = 0
     activation_recorder = activation
@@ -118,7 +109,7 @@ def activation_spreading_analysis(net, source, target):
     while fired.any():
         activation = activation*W
         activation_recorder = activation_recorder + np.multiply(fired, activation)
-        for i in range(l):
+        for i in range(length):
             if fired[0,i] == 1 and activation[0,i] > 0:
                 fired[0,i] = fired[0,i] - 1
 
@@ -132,15 +123,6 @@ def activation_spreading_analysis(net, source, target):
     #  for node in sorted_dict:
     #    print((node, sorted_dict[node]))
 
-    color_list = []
-    for node in c_net:
-        color_list.append(math.log(activation_recorder[0, node_list.index(node)]))
-
-    #  print(color_list)
-    if VERBOSE:
-        net.plot_lexical_network(color_list)
-        plt.show()
-
     semantic_relatedness_dict = {}
     for word in target:
         semantic_relatedness_dict[word] = activation_recorder[0, node_list.index(word)]
@@ -149,3 +131,17 @@ def activation_spreading_analysis(net, source, target):
     return semantic_relatedness_dict
 
 
+def get_activation_plot(net, activation_recorder, node_list):
+    if net.network_type == 'stn':
+        c_net = net.constituent_net
+    else:
+        c_net = net.network[2]
+
+    color_list = []
+    for node in c_net:
+        color_list.append(math.log(activation_recorder[0, node_list.index(node)]))
+
+    #  print(color_list)
+    if VERBOSE:
+        net.plot_lexical_network(color_list)
+        plt.show()
