@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats as ss
 
+
 def calculate_rank_matrix(matrix,version): # get the standard ranking based on linguistic corpus, and get the model
     # syntagmatic ranking from semantic relatedness output.
     transpose = matrix.transpose()
@@ -30,3 +31,9 @@ def calculate_rank_matrix(matrix,version): # get the standard ranking based on l
         rank_matrix[i] = ss.rankdata(occur_list)
 
     return rank_matrix
+
+
+def get_model_ranking(sr_matrix):
+    matrix_size = sr_matrix.shape()
+    model_rank_matrix = np.zeros(matrix_size)
+    return model_rank_matrix

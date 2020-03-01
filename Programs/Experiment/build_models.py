@@ -1,5 +1,5 @@
 period = True
-
+from Programs.Spatial_Models import cooc_graph_analysis, spacial_analysis, sim_space_analysis, sim_graph_analysis
 
 ########################################################################################################################
 # In Humans, corpora generated are lists of sentences, to feed the linear models, need to first transform the sentences
@@ -24,3 +24,18 @@ def corpus_transformation(linear_corpus, period_mark):
         vocab_list.append('.')
         vocab_index_dict['.'] = len(vocab_list)-1
     return corpus, vocab_list, vocab_index_dict
+
+
+cooc_matrix = spacial_analysis.build_cooc_space()[1]
+cooc_graph = cooc_graph_analysis.build_cooc_graph()[1]
+sim_matrix = sim_space_analysis.build_sim_space()[1]
+sim_graph = sim_graph_analysis.build_sim_graph()[1]
+
+
+
+
+
+
+
+
+

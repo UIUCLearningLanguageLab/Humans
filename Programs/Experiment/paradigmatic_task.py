@@ -1,4 +1,5 @@
-from Programs.Linear_Models import sim_space_analysis, STN, graphical_analysis, synHAL_analysis
+from Programs.Linear_Models import sim_space_analysis, activation_spreading
+from Programs.Syntactic_Models import synHAL_analysis
 import numpy as np
 import math
 
@@ -25,10 +26,8 @@ def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model,
         noun = category_nouns[i]
         if model == 'hal':
             sim_noun = sim_space_analysis.get_cos_sim(linear_corpus, noun, category_nouns, encoding, svd)
-        elif model == 'spatial':
-            sim_noun = synHAL_analysis.get_cos_sim(corpus, linear_corpus, noun, category_nouns, window_weights, svd)
         else:
-            sim_noun = graphical_analysis.activation_spreading_analysis(corpus, noun, category_nouns)
+            sim_noun = activation_spreading.activation_spreading_analysis(corpus, noun, category_nouns)
         for j in range(len(p_nouns)-1):
             target_noun = category_nouns[j]
             if target_noun != noun:

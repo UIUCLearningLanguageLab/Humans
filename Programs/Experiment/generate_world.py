@@ -1,5 +1,6 @@
 from Programs.World import world, config
-from Programs.Linear_Models import sim_space_analysis, STN, graphical_analysis, synHAL_analysis
+from Programs.Linear_Models import sim_space_analysis, activation_spreading
+from Programs.Syntactic_Models import STN, synHAL_analysis
 from Programs.Experiment import paradigmatic_task as p_task
 from Programs.Experiment import syntagmatic_task as s_task
 from pathlib import Path
@@ -36,7 +37,6 @@ def generate_a_world():
         Steve = human.get_activated_words()[1]
         linear_Doug = STN.Dg(human.linear_corpus)
         p_nouns = human.p_noun
-
         t_verbs = human.t_verb
         rank_size = len(p_nouns) * len(t_verbs)
         #print(p_nouns)
@@ -62,3 +62,4 @@ def generate_a_world():
         data_matrix = flat_standard
         category_sim = []
         within_between = []
+        return category_sim, within_between
