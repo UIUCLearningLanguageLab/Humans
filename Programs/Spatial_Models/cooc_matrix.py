@@ -6,30 +6,13 @@ PAD = '*PAD*'
 VERBOSE = False
 period = True
 
-
-def corpus_transformation(linear_corpus, period_mark):  # list of sentence into list of words, for spatial models
-    corpus = []
-    vocab_index_dict = {}
-    vocab_list = []
-    for sentence in linear_corpus:
-        for word in sentence:
-            corpus.append(word)
-            if word not in vocab_index_dict:
-                l = len(vocab_list)
-                vocab_index_dict[word] = l
-                vocab_list.append(word)
-        if period_mark:
-            corpus.append('.')
-    if period_mark:
-        vocab_list.append('.')
-        vocab_index_dict['.'] = len(vocab_list)-1
-    return corpus, vocab_list, vocab_index_dict
-
 ########################################################################################################################
-# HAL co-occurence count, varied by window type, window size and window weight
+# building HAL-style co-occurrence matrix, the output will be a cooc matirx
+# the cooc matrix has normalization status: no, ppmi, row probability
+# reduction: svd or no svd
 ########################################################################################################################
 
-def create_ww_matrix(vocab_list, vocab_index_dict, tokens, encoding):  # no function call overhead - twice as fast
+def create_cooc_matrix(vocab_list, vocab_index_dict, tokens, encoding):  # no function call overhead - twice as fast
     window_type = encoding['window_type']
     window_size = encoding['window_size']
     window_weight = encoding['window_weight']
@@ -55,18 +38,18 @@ def create_ww_matrix(vocab_list, vocab_index_dict, tokens, encoding):  # no func
                         count_matrix[vocab_index_dict[window[0]], vocab_index_dict[window[i+1]]] += 1
     # window_type
     if window_type == 'forward':
-        final_matrix = count_matrix
+        cooc_matrix = count_matrix
     elif window_type == 'backward':
-        final_matrix = count_matrix.transpose()
+        cooc_matrix = count_matrix.transpose()
     elif window_type == 'summed':
-        final_matrix = count_matrix + count_matrix.transpose()
+        cooc_matrix = count_matrix + count_matrix.transpose()
     elif window_type == 'concatenated':
-        final_matrix = np.concatenate((count_matrix, count_matrix.transpose()), axis=1)
+        cooc_matrix = np.concatenate((count_matrix, count_matrix.transpose()), axis=1)
     else:
         raise AttributeError('Invalid arg to "window_type".')
     #  print('Shape of normalized matrix={}'.format(final_matrix.shape))
-    return final_matrix
 
+    return cooc_matrix
 
 def get_ppmi_matrix(ww_matrix):  # get ppmi martix from co-occurrence matrix
     size = ww_matrix.shape
@@ -85,41 +68,9 @@ def get_ppmi_matrix(ww_matrix):  # get ppmi martix from co-occurrence matrix
             else:
                 ppmi_matrix[i][j] = 0
                 pmi_matrix[i][j] = 0
+
     return ppmi_matrix, pmi_matrix
 
-
-def get_cos_sim(linear_corpus,source,target,encoding,svd):
-    corpus, vocab_list, vocab_index_dict = corpus_transformation(linear_corpus, period)
-    #print(corpus)
-    #print(vocab_list)
-    #print(vocab_index_dict)
-
-    final_matrix = create_ww_matrix(vocab_list, vocab_index_dict, corpus, encoding)
-    ppmi_matrix, pmi_matrix = get_ppmi_matrix(final_matrix)
-    if svd:
-        ppmi_matrix = np.linalg.svd(ppmi_matrix)[0]
-    if VERBOSE:
-        print(vocab_list)
-    #print(final_matrix)
-    #print(pmi_matrix)
-    cos_sim = {}
-    v1 = ppmi_matrix[vocab_index_dict[source]]
-    if VERBOSE:
-        print(source)
-        print(v1)
-    for word in target:
-        v2 = ppmi_matrix[vocab_index_dict[word]]
-        if VERBOSE:
-            print(word)
-            print(v2)
-        cos_sim[word]=np.inner(v1,v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
-    return cos_sim
-
-
-def main():
-    linear_corpus = [['the','dog','chased','the','cat'],['the','cat','chased','the','mouse']]
-    cos_sim = get_cos_sim(linear_corpus,'dog',['cat','mouse'],{'window_type':'summed','window_size':3,
-                                                               'window_weight':'flat'}, False)
-    print(cos_sim)
-
-#main()
+def svd_reduct(matrix):
+    matrix = np.linalg.svd(matrix)[0]
+    return matrix
