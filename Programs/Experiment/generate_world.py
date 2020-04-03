@@ -1,16 +1,7 @@
 from Programs.World import world, config
-from Programs.Linear_Models import sim_space_analysis, activation_spreading
-from Programs.Syntactic_Models import STN, synHAL_analysis
-from Programs.Experiment import paradigmatic_task as p_task
-from Programs.Experiment import syntagmatic_task as s_task
-from pathlib import Path
-import numpy as np
-import scipy.stats as ss
-import csv
-import matplotlib.pyplot as plt
-import math
 
 VERBOSE = False
+
 
 def running_world():  # running the world and get the corpus
     the_world = world.World()
@@ -27,39 +18,55 @@ def running_world():  # running the world and get the corpus
         print('{} epochs passed'.format(the_world.epoch))
     return the_world
 
-def generate_a_world():
-    the_world = running_world()
-    matrices = []
+
+def get_world_info(the_world):
+    # there could be multiple humans in the world, in the current model, there is only one
+    profiles = []  # a record of information with respect to individuals: individuals are keys, and values are the
+    # experiment-relevant information regarding the individuals
     for human in the_world.human_list:
-        corpus = human.corpus
-        num_sentence = len(corpus)
+        profile = {}  # currently a paradigmatic and a syntagmatic task are carried out, need to pass the input to the
+        # task.
+        output_info = {}
+        kit = {} # a kit is the package of data in order to carrying out the tasks: including the
+        # corpus, the verbs and nouns, and the verb-noun pairs and so on
+
+        ###############################################################################################################
+        # followings are preparation for the s_task and p_task in linear models, get the s_kit, p_kit for the tasks.
+        ###############################################################################################################
+
         linear_corpus = human.linear_corpus
-        Steve = human.get_activated_words()[1]
-        linear_Doug = STN.Dg(human.linear_corpus)
         p_nouns = human.p_noun
         t_verbs = human.t_verb
-        rank_size = len(p_nouns) * len(t_verbs)
-        #print(p_nouns)
-        #print(t_verbs)
-        target = p_nouns
         pairs = human.t_p_pairs
-        ranking = np.zeros((len(p_nouns),len(t_verbs)))
-        for phrase in pairs:
-            id_argument = p_nouns.index(phrase[1])
-            id_predicate = t_verbs.index(phrase[0])
-            ranking[id_argument][id_predicate] = pairs[phrase]
-        #print(ranking)
-        standard_ranking = s_task.calculate_rank_matrix(ranking,'standard')
-        flat_standard = standard_ranking.flatten().reshape(rank_size,1)
+        #word_bag, vocab_list, vocab_index_dict = build_models.corpus_transformation(linear_corpus)
+        #cooc_matrix, sim_matrix = build_models.build_model(word_bag, vocab_list, vocab_index_dict, model_parameters)
         flat_item = []
         for verb in t_verbs:
             for noun in p_nouns:
                 phrase = verb + '_' + noun
                 flat_item.append(phrase)
+
+        #print(p_nouns)
+        #print(t_verbs)
+        kit['p_nouns'] = p_nouns
+        kit['t_verbs'] = t_verbs
+        kit['pairs'] = pairs
+        kit['flat_item'] = flat_item
+        kit['the_world'] = the_world
+
+        ###############################################################################################################
+        # followings are preparation for the s_task and p_task in syntactic models, get the s_kit, p_kit for the tasks.
+        ###############################################################################################################
+        Steve = human.get_activated_words()[1]
+        corpus = human.corpus
+        num_sentence = len(corpus)
+        #flat_standard = standard_ranking.flatten().reshape(rank_size,1)
+
         #print('standard')
         #print(standard_ranking)
         #recording_matrix = np.zeros((2 * len(window_sizes) + 3, len(window_weights) * len(window_types)))
-        data_matrix = flat_standard
-        category_sim = []
-        within_between = []
-        return category_sim, within_between
+        #data_matrix = flat_standard
+        profile['kit'] = kit
+        profile['output_info'] = output_info
+        profiles.append(profile)
+    return profiles, linear_corpus

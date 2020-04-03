@@ -1,13 +1,9 @@
-from Programs.Linear_Models import sim_space_analysis, activation_spreading
-from Programs.Syntactic_Models import synHAL_analysis
+from Programs.Graphical_Models import graphical_analysis
 import numpy as np
 import math
 
 
-def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model, svd): # get paradigmatic
-    # relatedness(similarities) between noun pairs, also get mean similarities of noun categories and of within and
-    # between category groups.
-    num_category = 3
+def get_categories(p_nouns, the_world):
     animals = []
     fruits = []
     drinks = []
@@ -20,21 +16,30 @@ def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model,
             drinks.append(noun)
     category_nouns = animals + fruits + drinks
     categories = [animals, fruits, drinks]
-    noun_sim_matrix = np.zeros((len(p_nouns), len(p_nouns)-1))
-    within_between = [np.array([0]),np.array([0])]
-    for i in range(len(p_nouns)):
+    return categories, category_nouns
+
+
+def get_noun_sim(p_nouns, category_nouns, matrix, model, vocab_list):
+    noun_sim_matrix = np.zeros((len(p_nouns), len(p_nouns) - 1))
+    for i in range(len(category_nouns)):
         noun = category_nouns[i]
-        if model == 'hal':
-            sim_noun = sim_space_analysis.get_cos_sim(linear_corpus, noun, category_nouns, encoding, svd)
+        if model == 'cooc_graph' or model == 'sim_graph':
+            grand_list = p_nouns
         else:
-            sim_noun = activation_spreading.activation_spreading_analysis(corpus, noun, category_nouns)
+            grand_list = vocab_list
+        id_noun = grand_list.index(noun)
         for j in range(len(p_nouns)-1):
             target_noun = category_nouns[j]
             if target_noun != noun:
-                noun_sim_matrix[i][j] = sim_noun[target_noun]
-    #print(model)
-    #print(noun_sim_matrix)
+                id_target = grand_list.index(target_noun)
+                noun_sim_matrix[i][j] = matrix[id_noun][id_target]
+    return noun_sim_matrix
 
+def get_category_sim(category_nouns, categories, noun_sim_matrix): # get paradigmatic
+    # relatedness(similarities) between noun pairs, also get mean similarities of noun categories and of within and
+    # between category groups.
+    num_category = len(categories)
+    within_between = [np.array([0]),np.array([0])]
     category_sim_matrix = np.zeros((num_category, num_category))
     for i in range(num_category):
         r_s = category_nouns.index(categories[i][0])
@@ -42,7 +47,7 @@ def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model,
         for j in range(num_category):
             c_s = category_nouns.index(categories[j][0])
             c_e = category_nouns.index(categories[j][-1])
-            if i == j:
+            if i <= j:
                 sub_matrix = noun_sim_matrix[r_s:r_e + 1, c_s:c_e].flatten()
                 within_between[0] = np.concatenate((within_between[0],sub_matrix),0)
             else:
@@ -51,6 +56,26 @@ def get_category_sim(p_nouns, the_world, corpus, linear_corpus, encoding, model,
             category_sim_matrix[i][j] = sub_matrix.mean()
     within_between[0] = within_between[0][1:]
     within_between[1] = within_between[1][1:]
-    within_between = [(within_between[0].mean(),within_between[0].std()/math.sqrt(len(within_between[0]))),
-                      (within_between[1].mean(),within_between[1].std()/math.sqrt(len(within_between[1])))]
+    within_between_result = [within_between[0].mean(),within_between[0].std()/math.sqrt(len(within_between[0])),
+                      within_between[1].mean(),within_between[1].std()/math.sqrt(len(within_between[1]))]
+    return category_sim_matrix, within_between_result
+
+
+def run_task(kit, model):
+    p_nouns = kit['p_nouns']
+    the_world = kit['the_world']
+    vocab_list = kit['vocab_list']
+    if model == 'cooc' or model == 'sim':
+        matrix = kit['sim_matrix']
+
+    elif model == 'cooc_graph':
+        adjacency_m = kit['cooc_matrix']
+        matrix = graphical_analysis.get_sr_matrix(adjacency_m, p_nouns, p_nouns, vocab_list)
+    else:
+        adjacency_m = kit['sim_matrix']
+        matrix = graphical_analysis.get_sr_matrix(adjacency_m, p_nouns, p_nouns, vocab_list)
+    categories, category_nouns = get_categories(p_nouns, the_world)
+    noun_sim_matrix = get_noun_sim(p_nouns,category_nouns, matrix, model, vocab_list)
+    category_sim_matrix, within_between = get_category_sim(category_nouns, categories, noun_sim_matrix)
     return category_sim_matrix, within_between
+
