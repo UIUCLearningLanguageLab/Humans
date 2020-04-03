@@ -71,6 +71,12 @@ def get_ppmi_matrix(ww_matrix):  # get ppmi martix from co-occurrence matrix
 
     return ppmi_matrix, pmi_matrix
 
-def svd_reduct(matrix):
-    matrix = np.linalg.svd(matrix)[0]
-    return matrix
+
+def get_cooc_matrix(vocab_list, vocab_index_dict, word_bag, encoding, normalization, reduction):
+    cooc_matrix = create_cooc_matrix(vocab_list, vocab_index_dict, word_bag, encoding)
+    if normalization == 'ppmi':
+        cooc_matrix = get_ppmi_matrix(cooc_matrix)[0]
+    if reduction == 'svd':
+        cooc_matrix = np.linalg.svd(cooc_matrix)[0]
+    return cooc_matrix
+
