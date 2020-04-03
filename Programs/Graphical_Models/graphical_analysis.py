@@ -88,6 +88,8 @@ def general_analysis(steven):
 
 
 def get_adjacency_matrix(net):
+    # not necessary for linear models, which form the adjacency matrix directly
+    # necessary for activation-spreading on complex network like STN
     W = nx.adjacency_matrix(net.network[2], nodelist=net.network[1])
     W.todense()
     length = W.shape[0]
@@ -97,9 +99,20 @@ def get_adjacency_matrix(net):
 
 def activation_spreading_analysis(adjacency_matrix, source, target, node_list):
     # Spreading activation to measure the functional distance from source to target
-    # where target and source are single items
-    length = len(node_list)
-    W = lil_matrix(adjacency_matrix)
+    # where source is one item, and target is a list(of items)
+    # returns a sr_dictionary consisting of sr from the source to all targets
+    W = adjacency_matrix + np.transpose(adjacency_matrix)
+
+    W = np.asmatrix(W)
+    length = W.shape[0]
+    W = lil_matrix(W)
+    normalizer = W.sum(1)
+    for i in range(length):
+        for j in range(length):
+            if normalizer[i][0, 0] == 0:
+                W[i, j] = 0
+            else:
+                W[i, j] = W[i, j] / normalizer[i][0, 0]
     activation = np.zeros((1,length),float)
     fired = np.ones((1, length), float)
     activation[0, node_list.index(source)] = 1
@@ -110,8 +123,10 @@ def activation_spreading_analysis(adjacency_matrix, source, target, node_list):
         activation = activation*W
         activation_recorder = activation_recorder + np.multiply(fired, activation)
         for i in range(length):
-            if fired[0,i] == 1 and activation[0,i] > 0:
-                fired[0,i] = fired[0,i] - 1
+            if fired[0,i] == 1 and activation[0,i] != 0:
+                fired[0,i] = 0
+
+
 
     sorted_activation = activation_recorder.tolist()[0]
     sorted_activation.sort(reverse=True)
@@ -126,7 +141,7 @@ def activation_spreading_analysis(adjacency_matrix, source, target, node_list):
     semantic_relatedness_dict = {}
     for word in target:
         semantic_relatedness_dict[word] = activation_recorder[0, node_list.index(word)]
-    #  print(semantic_relatedness_dict)
+    #print(semantic_relatedness_dict)
 
     return semantic_relatedness_dict
 
@@ -145,3 +160,17 @@ def get_activation_plot(net, activation_recorder, node_list):
     if VERBOSE:
         net.plot_lexical_network(color_list)
         plt.show()
+
+def get_sr_matrix(matrix, word_list1, word_list2, node_list):
+    # word_list1 is for rows, and word_list2 for colums
+    # in syntagmatic task, word_list1 are nouns, and word_list2 verbs
+    # nouns are targets, while verbs are sources
+    # return a matrix of semantic relatedness from sr_dictionaries
+    sr_matrix = np.zeros((len(word_list1),len(word_list2)))
+    for source in word_list2:
+        sr_dict = activation_spreading_analysis(matrix, source, word_list1, node_list)
+        for target in word_list1:
+            id1 = word_list1.index(target)
+            id2 = word_list2.index(source)
+            sr_matrix[id1][id2] = sr_dict[target]
+    return sr_matrix
