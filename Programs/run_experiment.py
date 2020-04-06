@@ -8,12 +8,24 @@ p_task = True
 models = ['cooc', 'sim', 'cooc_graph', 'sim_graph']
 parameters = ['window_size', 'window_weight', 'window_type', 'normalization', 'reduction', 'sim_type']
 
-parameter_dict = {'window_size': [1],
+parameter_dict = {'window_size': [2],
                    'window_weight': ['linear'],
                    'window_type': ['forward','backward','summed'],  # , 'backward', 'summed', 'concatenated'],
                    'normalization': ['ppmi', 'non'],
                    'reduction': ['non','svd'],
                    'sim_type': ['cos', 'distance', 'corr']}
+
+chosen_para = ['models','reduction', 'sim_type']
+
+def get_data_space():
+    matrix_shape = []
+    for parameter in parameter_dict:
+        matrix_shape.append(len(parameter_dict[parameter]))
+    matrix_shape.append(len(models))
+    matrix_shape = tuple(matrix_shape)
+    hd_matrix = np.zeros(matrix_shape)
+    return hd_matrix
+
 
 
 def get_model_list(parameter_dict, parameters):  # iterate over paramenter_dict to get the list of model_parameter_combinations (in
@@ -50,8 +62,10 @@ def run_experiment(num_run):
     corr_data_matrix = np.zeros((num_run, num_model))
     wb_data_matrix = np.zeros((4*num_run, num_model))
     ranking_data_matrix = np.zeros((1, num_model))
+    hd_matrix = get_data_space()
 
     for i in range(num_run):
+        hd_matrix = get_data_space()
         # create a world and get world info
         the_world = generate_world.running_world()
         profiles, linear_corpus = generate_world.get_world_info(the_world)
@@ -76,6 +90,9 @@ def run_experiment(num_run):
         # use world info to build 4 models according each model parameter
         for model_parameters in model_para_list:
             print(model_parameters)
+            parameter_index = []
+            for dimension in parameters:
+                parameter_index.append(parameter_dict[dimension].index(model_parameters[dimension]))
             id_parameters = model_para_list.index(model_parameters)
             word_bag, vocab_list, vocab_index_dict = build_models.corpus_transformation(linear_corpus)
             kit['vocab_list'] = vocab_list
@@ -86,6 +103,7 @@ def run_experiment(num_run):
 
             for model in models:
                 id_model = models.index(model) + 4 * id_parameters
+
                 if p_task:
                     within_between = paradigmatic_task.run_task(kit,model)[1]
                     for j in range(4):
@@ -96,7 +114,9 @@ def run_experiment(num_run):
                     print(model_corr)
                     corr_data_matrix[i][id_model] = model_corr
                     current_ranking_matrix = np.concatenate((current_ranking_matrix, output_ranking), 1)
-
+                    hd_index = parameter_index + [models.index(model)]
+                    hd_index = tuple(hd_index)
+                    hd_matrix[hd_index] = model_corr
 
         if s_task:
             current_ranking_matrix = current_ranking_matrix[0:,1:]
@@ -108,8 +128,10 @@ def run_experiment(num_run):
     if s_task:
         output.output_exp(num_model, corr_header, corr_dict, 's_corr.csv', corr_data_matrix)
         output.output_exp(num_model, ranking_header, ranking_dict, 's_ranking.csv', ranking_data_matrix)
+        output.corr_plot(hd_matrix,chosen_para, parameters, parameter_dict, models)
     if p_task:
         output.output_exp(num_model, wb_header, wb_dict, 'within_between.csv', wb_data_matrix)
+
 
 run_experiment(num_run)
 

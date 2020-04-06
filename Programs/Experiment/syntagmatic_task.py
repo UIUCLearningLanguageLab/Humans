@@ -77,13 +77,30 @@ def get_standard_ranking(kit):
     return standard_ranking
 
 
+def trivial_ranking(ranking):
+    # telling if the ranking is trivial(all ranks are the same)
+    length = np.shape(ranking)[0]
+    triviality = True
+    for i in range(length):
+        if ranking[i] != ranking[0]:
+            triviality = False
+            break
+    return triviality
+
+
+
+
 def run_task(kit, model):
     # get model ranking from the sr_matrix carried out by the model
     # and then compute the model ranking corr to standard corr
     standard_ranking = get_standard_ranking(kit)
     sr_matrix = get_task_matrix(kit, model)
     model_ranking = calculate_rank_matrix(sr_matrix, 'non')
-    model_corr = np.corrcoef(model_ranking, standard_ranking)[0][1]
+    triviality = trivial_ranking(model_ranking)
+    if triviality:
+        model_corr = 0
+    else:
+        model_corr = np.corrcoef(model_ranking, standard_ranking)[0][1]
     output_ranking = model_ranking.reshape(len(model_ranking),1)
     return model_corr, output_ranking
 

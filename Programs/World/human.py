@@ -3,7 +3,7 @@ import random
 
 import numpy as np
 
-from Programs.Linear_Models import STN
+from Programs.Graphical_Models import STN
 from Programs.World import animals
 from Programs.World import config
 from Programs.World import event_tree as et
