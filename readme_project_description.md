@@ -408,31 +408,66 @@ of agents, which make up part of the world semantic, and will be talked about la
 
 Apart from the agents, we have some resources and locations, making up the nouns in the corpus. In W1, locations are like
 other resources, considered as patient of actions, e.g. go_to river. Yet, in later versions of world, it can become a
-real location, as an adverbial component in a sentence. Different from the animals and humans which can be of either agent or patient 
-role in a event, e.g. a bison can eat grass, while chased by a tiger, the resources and location only appear in the patient
-role of the sentence.
+real location, as an adverbial component in a sentence. Different from the animals and humans which can be of either 
+agent or patient role in a event, e.g. a bison can eat grass, while chased by a tiger, the resources and location only 
+appear in the patient role of the sentence.
+
+**How the world run**
+
+The world is agent focused. At each moment, all existing agent take their turns updating their inner state on their event
+trees. If some agent is on ite terminal nodes, a world event is generated, coupled with a simple sentence describing it
+added to the corpus. And since all agents act to fulfill their drives, the system will just go on and on automatically
+until the end of the program (number of turns). And in W1, the agents do not direct interact each other, except for humans
+and carnivores may hunt herbivores. No communal action is allowed. Every individual's behaviors only depend on its own
+current drive level and the inner event tree, therefore maximally independent of other agents.
 
 **World semantics**
 
+###### Combinatorial rules
 
+In W1, there are entities and actions. In terms the targeting language, the actions becomes the predicate(verb) of sentences
+while the entities become agents/patient of the predicates. When creating the event tree, agent-predicate relations are
+stipulated, an agent will only have the actions appeared in its event tree. Similarly, verb-predicate relations are
+also stipulated for every single verb, and it results in a noun-verb relation table:
 
+|       | crack(a) | chase(a) | eat(a) | drink(a) | crack(p) | chase(p) | eat(p) | drink(p) |
+|:-----:|:--------:|:--------:|:------:|:--------:|:--------:|:-------:|:-------:|:--------:|
+| Mary  | 1        | 1        | 1      | 1        | 0        | 1       | 0       | 0        | 
+| Tiger | 0        | 1        | 1      | 1        | 0        | 0       | 0       | 0        |  
+| Bison | 0        | 0        | 1      | 1        | 0        | 1       | 1       | 0        |
+| Walnut| 0        | 0        | 0      | 0        | 1        | 0       | 1       | 0        | 
+| apple | 0        | 0        | 0      | 0        | 0        | 0       | 1       | 0        | 
+| Water | 0        | 0        | 0      | 0        | 0        | 0       | 0       | 1        |
 
+Above is part of the **syntagmatic rule** table of W1, which stipulate the noun-verb relation. For example, the first row
+of the table stipulate that, in W1, Mary as a human, may crack, chase, eat, drink and be chased, while may not be cracked, 
+eaten or drunk. These combinatorial rules is considered as the main component of the world semantics in W1, and since the 
+corpus is a description of the world events generated from these rules, the corpus will inherit these rules, which can be
+shown in the distributional pattern of the words in the corpus. For example, in the table we have Mary allowed to
+be agent for crack, but not patient for eat, therefore in the corpus, there may be sentence like 'Mary crack X',
+but never 'Y eat Mary', in other word, Mary may appear immediately before the verb 'crack', but not immediately after 'eat'.
+The distributional information is in turn, critical to the semantic representation, and can be considered as a major
+component of the word semantics.
 
+Also in W1, we have design to differentiate the agents by what they eat: humans eat herbivores, fruits and nuts, carnivores
+eat herbivores, and herbivores eat plants. The agent-paitent syntagmatic relations, although not included in the table
+above, also contributes to the world semantics, and would also be featured as distributional patterns in the corresponding
+corpora. 
 
+And binding some verb-noun, and agent-patient relation, we have some D2 here in the picture. For example, there are foods
+like fruits and plants that can be eaten, different from the drinks, which can be drunk but not eaten. While when comparing
+fruits and plants, the distinction is not only in the action, but also in the agent they couple with. Although both fruits
+and plants can be eaten, fruits are only eaten by humans, while plants only by herbivores, and this is exactly D2. While 
+W1 is not aimed for studying D2, we see the possbility in the design. 
 
+###### Ordered events
 
-
-
-
-
-
-
-
-
- 
-
-
-
+Another component of world semantics embedded in W1 is the event order. In reality, events are not just a collection of 
+unordered happenings, but have temporal orders and casual relations. W1 capture the temporal linearity of the event, which
+is stipulated in the event trees. Remember in the event trees, there are serial combinations, which arrange the sub-events
+by a serial order. For example, to bite a game, the carnivore has to first chase it and catch it. This generic temporal
+linearity in the world lead to the orderness of sentences in the corresponding corpus, which differentiate it from
+the corpora generated by generative grammar. We will have more discussion on the effect of this later.
 
 
 ## Corpus
