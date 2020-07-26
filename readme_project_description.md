@@ -183,6 +183,258 @@ structures, like representing the relations of the words in D1.
 
 ## World
 
+In this project, all semantic models will be trained on artificially generated linguistic corpora. We will discuss, in the next
+section, why we need a corpus but not material in other form and why the corpus need to be artificial but not naturalistic 
+(e.g. Wikipedia), and here assuming that an artificial corpus is what we need. Then the questions is, how do we generate
+the corpus?
+
+### Motivation: A world for words
+
+Our choice here is to generate corpora backed up by a simulated world. The reasons are twofolds:
+1. to ground the linguistic corpus with a 'physical world' reality and provide the 'world knowledge' (world semantics) 
+giving rise to the language (corpus, word semantics). 
+2. since we also want to look at the relationship and interactions between world semantics and word semantics, thus a world
+for words becomes necessary.
+
+Going back to the very general goal mentioned in the introduction, we are interested in both the relation between world
+-word semantics and the structure of word semantics. For the former interest, there has to be a simulated world, which also
+benefits the second interest: when we look at how different semantic models work on a given corpus, we can fix the world
+so that all models work on the same corpora.
+
+However, while sticking to the purpose of studying word semantic structures, one may argue what is needed is mere the corpus,
+thus, a backed up world may look redundant. Instead, the classic way to generate corpus is to use generative grammars,
+for example, CFG or PCFG (Probablistic Context Free Grammar). However, such generative grammars are not powerful enough 
+when it comes to generate corpora with rich semantics, and they also lack a sense of reality, that a world based corpus 
+may provide.
+
+For example, we look at 'drink coffee' and 'eat an apple'. To mimic the reality, we need the corpus to have 'drink' go with
+'coffee' while 'eat' go with 'apple'. Suppose we have a PCFG, the only way to realize such semantics is to write all of
+these explicitly in the generative rules. If we only have the following PCFG:
+
+Non Terminals: {VP, V, N}<br />
+Terminals: {apple, coffee, drink, eat}<br />
+Rules:<br />
+VP -> V N, 1 <br />
+V -> drink, p1/ eat, 1-p1 <br />
+N -> coffee, p2/ apple, 1-p2 <br />
+
+Such a PCFG would end up in a language with four types of phrases, with the following probability distribution:
+
+drink coffee: p1p2 <br />
+drink apple: p1(1-p2) <br />
+eat coffee: p2(1-p1) <br />
+eat apple: (1-p1)(1-p2) <br />
+
+Suppose we need a corpus in which 'drink coffee' and 'eat apple' has to be there, but not the other two, it turns out
+mathematically this is not realizable with the PCFG above. Since we don't want 'drink apple', p1 has to be 0, or 
+p2 has to be 1, however, p1 can't be 0, otherwise, 'drink' will not be in the corpus, therefore p2 has to be 1. However,
+if p2 = 1, and we don't want 'eat coffee', then p1 has to be 1, which implies 'eat' will not be in the corpus, which
+is not what we want. Therefore, we see that such a corpus can not be realized by the PCFG, above.
+
+A crital problem for the PCFG above is that it makes the distribution of argument nouns independent of the choice of 
+verb (context free), which is in most case, not acceptable for a language embedded with realistic semantics. Because in
+realistic semantics, the combination is interdepedent, we drink liquid and eat foods, the nouns to be take as argument
+depend on what is the verb (predicate, event). This makes it very difficult for a PCFG to generate a semantic rich
+corpus.
+
+However, it is still 'possible' to realize realistic semantics through PCFG, by spelling out all the rules:
+Non Terminals: {VP, V1, V2, N1, N2}<br />
+Terminals: {apple, coffee, drink, eat}<br />
+Rules:<br />
+VP -> V1 N1, p/ V2 N2, p <br />
+V1 -> drink 1 <br />
+V2 -> eat, 1 <br />
+N1 -> coffee, 1 <br />
+N2 -> apple, 1 <br />
+
+In this way, we are explicitly writing down the two legal phrases in the rules, and we have to divide the set of verbs and
+nouns into discrete singleton, because they all have different coupliing behaviors.
+
+A corollary follows that one has to spell out every single sentence (one line of rule, for one sentence), and make a 
+grammatical category for almost every single word to generate a corpus with realistic semantics. Because the richness of
+semantics implying (almost) every single word has its own meaning, reflected in its coupling with other words. Therefore,
+there will be no rule like A -> B C, where B and C stand for non-singleton, otherwsie, for B1 and B2 in set B, they
+have the exact same meaning. 
+
+Such a corollary implies that PCFG style grammar, without spelling out every single sentence 
+it is supposed to create, is not able to generate corpora embedded with realistic semantics. Therefore, since after all 
+we have to spell out the sentences, we do it in a more realistic way, that is create a world which 'grounds' every single 
+sentence that we want to have in the corpus as 'world event'. And while these events take place, sentences describing
+the event is generated, making up the corpus we need.
+
+### What is the world like?
+
+The world is designed as a 'agent focused world', consists of agent and environment. The agents are drive motivated,
+going around and act to fulfill their drives. Corresponding to the project goals concerning D1 and D2, we have two versions
+of world, version 1.0 (W1) and version 2.0 (W2) which is built on the first version. Both of W1 and W2 are designed with
+the aim to generate a corpus meeting the study goals of D1 and D2. In this section, we first introduce W1 while introducing
+the basic set up of all versions of simulated world in the study, and then move on to some plan for W2. 
+
+#### World 1.0
+
+There are 10 types of 'entities' in W1: <br />
+**Agents**: humans, carnivores, herbivores_1(H1), herbivores_2(H2), herbivores_3(H3) <br />
+**Resourses**: drinks, plants, fruits, nuts <br />
+**Locations**: locations <br />
+
+And for each of the 10 types include 3 different categories
+
+Humans: three names randomly chosen from a name list <br />
+Carnivores: {tiger, wolf, hyena} <br />
+H1: {squirrel, rabbit, fox} <br />
+H2: {ibex, mouflon, boar} <br />
+H3: {bison, buffalo, auroch} <br />
+drinks: {water, juice, milk} <br />
+fruits: {apple, peach, pear} <br />
+nuts: {walnut, cashew, almond} <br />
+plants: {flower, grass, leaf} <br />
+locations: {river, tent, fire} <br />
+
+All agents have two major systems, working together so that the agents take actions automatically.
+The two systems are **Drive**, and **Event Tree**.
+
+**Drive**
+
+In W1, all agents have 3 drives: hunger, thirst and sleepiness, which determine their behaviors. The level
+of 3 drives changes over time. When the drives are below some presupposed threshold, the agents 
+may do nothing, otherwise, they will act to satisfy their need. For example, if a tiger has 
+hunger with level 10, while the hunger threshold is 5, it will do something (hunting, eating)
+to soothe the hunger, and once it has had the meal, the level of hunger drop, while other drives
+probably has leveled up, say sleepiness, then the tiger may go sleep.
+
+**Event Tree**
+
+When agents need to fulfill their drives, they don't act randomly, but follow his/her embedded 'event
+tree'. An event tree is an internal system that determine the order and structure of the actions that an
+agent takes. 
+
+For example, when ordering and eating in Subway, one may go through ordering, paying, and then
+eat. Therefore, the whole 'eating at Subway' event can be further decomposed into a sequence of sub
+events, and we can say that the 'grand' event 'eating at Subway' is a serial combination of the
+three sub events. However, if we look closer at it, we notice that between paying and eating, there
+is an optional action of getting your soda, which depend on your order: if a soda is ordered, one
+needs to go get it, otherwise, there is no such an action. In this case, we can't constituent the 
+grand event by mere a sequence of sub events, since the latter sub-event might differ based on the 
+choice made in some earlier event. In this case, wherever there is a choice to make, we need to have
+a 'parallel design', to decompose the larger event into several options. For example, for the 'eating at Subway'
+event, after 'ordering', it can be divided into two 'branches', therefore, two paralleled subevent, one
+representing the option with soda, and the other not. Under the option without soda, it is followed by 
+paying and eating, while for the one with soda, it adds a 'fetching drink' event between paying and eating.
+
+The example above summarize the basic organization of our daily life events. Almost for every event with a 
+procedure, it can be decomposed as a combination of serial combined event and parallel combined events. 
+The serial decomposition occurs once the event can be divided into a sequential steps or linear order, while
+the parallel decompostion comes in whenever there is a choice to make. 
+
+Here, we use the event tree structure to organize how the agents act in the world. The leaves of an event tree
+are atomic events, which correspond to the verbs in the target corpus. The atomic actions are combined in
+serial or in parallel to form complex events, represented by parent branching nodes in the tree, and the
+sub events are the children node of the parent nodes. If the sub events are of serial order, the parent node
+is called a serial combination of its children, and if the sub events are combined in parallel, it is called
+a parallel combination. These parent nodes, while abstract, represent some intermediate event in the tree 
+structures, and these complex events are composed serially or parallel, recursively, ending up to the drive nodes 
+representing the drives. Finally, the drive nodes are combined in parallel to make the full event tree of the agent.
+
+In W1, there are only three kinds of event trees: one for humans, one for carnivores, and one for herbivores. Here
+is an example of the carnivore event tree in W1: 
+
+{()} <br />
+{} <br />
+'searching',(0,0) <br />
+'going_to',(0,1) <br />
+'chasing',(0,2) <br />
+'biting',(0,3) <br />
+'eating',(0,4) <br />
+'laying_down',(1,0) <br />
+'sleeping',(1,1) <br />
+'waking_up',(1,2) <br />
+'getting_up',(1,3) <br />
+'going_to',(2,0) <br />
+'drinking',(2,1) <br />
+'resting',(3,) <br />
+
+The first two lines notify the parallel branching node and probabilistic parallel branching node in the tree, all the 
+other nodes are either terminal nodes or serial branching nodes. A probabilistic parallel node choose its child by some 
+probability distribution over the children, while a deterministic parallel node choose its child by some deterministic 
+algorithm.
+
+And starting from the third line all the way to the last are the terminal nodes together with its coordinate in the tree.
+'()' refers to the coordinate of the root node, and for the rest of the node, the length of its coordinate indicate the 
+level of the node. Given the terminal nodes and their coordinate, one can recover the whole tree. For the carnivores' event
+tree, we can tell that they have three drive nodes (0,), (1,), (2,), and each one is a serial combination of several
+atomic events. (3,) marked by 'resting' is a void event which take place when all three drives are below the threshold.
+
+At each time point, the agent takes turn based on its current drive level, and accord to its event tree. And at each
+moment, the agent has a inner state, which is the node position in the event tree. An agent taking turns is referred as 
+its inner state moving on its event tree. Since all nodes in the event tree represent some 'event' (terminals are verbs, or
+atomic events, non-terminal branching nodes are intermediate event making of smaller sub events, and the root
+the full event), each of the node(event) in the structure has an 'complete/incomplete' attribute. For non-terminal
+nodes, if it is a serial combination, it is considered as complete if and only if all its children are complete, and to 
+complete a serial node, one finish all its children in the order from left to right on the tree. And if it is a parallel 
+combination, it is complete as long as one of its child node is complete, thus to complete a parallel node, one child
+among the children nodes is chosen, and it only needs to complete that chosen child event. For terminal
+nodes, which are atomic event corresponding to the real actions, the completeness attribute is determined by
+the action specific function.
+
+At the very beginning, the agent start from their root, and all nodes in the tree are 'incomplete'. It first evaluate the
+current drive level and decide which drive to satisfy, once the drive has been chosen, the inner state moves to the drive
+node. And on each non terminal branching node, it decides which node to go for this step. If the event represented by the
+current node has been finished, it goes back to its parent node(which is its parent event), otherwise, it continue on the
+event represented by the current node, which means that it should go to one of its child (go to the next step if serial/
+choose one if parallel). When it is on the terminal node, which is an action corresponding to a verb in the corpus,
+a specific corresponding action function is called representing the execution of this action, and whether it finish
+the action depends on the function. Some actions are finished at once, while others may take a few more turns.
+Once the action is complete, a sentence is generated, describing the sentence. The sentence always include the 
+agent and the verb, and in W1, it might have a patient if the verb is transitive, as we have both transitive
+(chase) and intransitive events (sleep) in W1. When the root node turn 'complete', an epoch is over, indicating
+that the agent has went over a series of actions satisfying the drive chosen at the beginning. Then the event tree
+of the agent is rebooted, so that all nodes in the tree becomes 'incomplete'. Then the agent looks at its current 
+drive levels and start another epoch.
+
+**Actions**
+
+In the simulated worlds, the actions are the predicate of the world events. In W1, there are 20 actions, which are: <br />
+**Intransitives**: search/ lay_down / sleep / wake_up / get_up / rest <br />
+**Transitives**: go_to / chase / bite / eat / drink / trap / stab / shoot / throw_at / gather / butcher / crack / peel / cook
+
+These actions are carried out by specific functions defined in the program, and when they are finished, a simple sentence
+describing the event is generated, contributing to the corpus. For example, if a bison finished eating grass, a sentence
+'bison eat grass' is generated, and added into the corpus. We will talk more about the corpus in the next section.
+
+One important point to make, is that the verbs are not for all agents, but each verb is specific to a constrained types 
+of agents, which make up part of the world semantic, and will be talked about later in the section.
+
+**Other Entities**
+
+Apart from the agents, we have some resources and locations, making up the nouns in the corpus. In W1, locations are like
+other resources, considered as patient of actions, e.g. go_to river. Yet, in later versions of world, it can become a
+real location, as an adverbial component in a sentence. Different from the animals and humans which can be of either agent or patient 
+role in a event, e.g. a bison can eat grass, while chased by a tiger, the resources and location only appear in the patient
+role of the sentence.
+
+**World semantics**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
 ## Corpus
 
 ## Semantic Models
