@@ -19,11 +19,11 @@ def get_categories(p_nouns, the_world):
     return categories, category_nouns
 
 
-def get_noun_sim(p_nouns, category_nouns, matrix, model, vocab_list):
+def get_noun_sim(p_nouns, category_nouns, matrix, rep, vocab_list):
     noun_sim_matrix = np.zeros((len(p_nouns), len(p_nouns) - 1))
     for i in range(len(category_nouns)):
         noun = category_nouns[i]
-        if model == 'cooc_graph' or model == 'sim_graph':
+        if rep == 'graph':
             grand_list = p_nouns
         else:
             grand_list = vocab_list
@@ -61,21 +61,21 @@ def get_category_sim(category_nouns, categories, noun_sim_matrix): # get paradig
     return category_sim_matrix, within_between_result
 
 
-def run_task(kit, model):
+def run_task(kit, encode, rep):
     p_nouns = kit['p_nouns']
     the_world = kit['the_world']
     vocab_list = kit['vocab_list']
-    if model == 'cooc' or model == 'sim':
+    if rep == 'space':
         matrix = kit['sim_matrix']
 
-    elif model == 'cooc_graph':
+    elif encode == 'cooc':
         adjacency_m = kit['cooc_matrix']
         matrix = graphical_analysis.get_sr_matrix(adjacency_m, p_nouns, p_nouns, vocab_list)
     else:
         adjacency_m = kit['sim_matrix']
         matrix = graphical_analysis.get_sr_matrix(adjacency_m, p_nouns, p_nouns, vocab_list)
     categories, category_nouns = get_categories(p_nouns, the_world)
-    noun_sim_matrix = get_noun_sim(p_nouns,category_nouns, matrix, model, vocab_list)
+    noun_sim_matrix = get_noun_sim(p_nouns,category_nouns, matrix, rep, vocab_list)
     category_sim_matrix, within_between = get_category_sim(category_nouns, categories, noun_sim_matrix)
     return category_sim_matrix, within_between
 

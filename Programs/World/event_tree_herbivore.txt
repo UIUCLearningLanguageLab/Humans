@@ -1,0 +1,12 @@
+{()}
+{}
+['searching',(0,0)]
+['going_to',(0,1)]
+['eating',(0,2)]
+['laying_down',(1,0)]
+['sleeping',(1,1)]
+['waking_up',(1,2)]
+['getting_up',(1,3)]
+['going_to',(2,0)]
+['drinking',(2,1)]
+['resting',(3,)]

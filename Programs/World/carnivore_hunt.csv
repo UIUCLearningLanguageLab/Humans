@@ -1,3 +1,3 @@
-function\animal,rabbit,squirrel,fox,mouflon,deer,boar,ibex,bison,mammoth,auroch,
-chasing,0.5,0.5,0.6,1,1,1,1,1,1,1,
-biting,1,1,1,0.9,0.6,0.5,0.7,0.2,0.01,0.2
+function\animal,rabbit,squirrel,fox,mouflon,boar,ibex,bison,buffalo,auroch,human
+chasing,0.5,0.5,0.6,1,1,1,1,1,1,1,1,
+biting,1,1,1,0.9,0.6,0.7,0.2,0.1,0.2,0,

@@ -654,17 +654,96 @@ the amount of activation flowing to B at the first time, and the activation in t
 proportional to the weights of the edges linking the nodes and its neighbors, say, A links to two nodes, B and C, with
 weight 0.3 and 0.7, then 0.3 activation flows to B, while 0.7 flows to A.
 
-And finally, for each model variations in the design, it ends up with a semantic relatedness table, inlcuding the semantic 
+And finally, for each model variations in the design, it ends up with a semantic relatedness table, including the semantic 
 relatedness score between all word pairs in the corpus.
 
 ## Evaluation
 
-
+As mentioned above, each model forms a semantic representation basing on the given corpus, which is the semantic relatedness
+score among all word pairs in the corpus. We evaluate the model representation by if the model capture the world semantics
+reflected in the corpus. The world is set up with following rules stipulating what may and may not happen in the world. 
  
+|       | crack(a) | chase(a) | eat(a) | drink(a) | crack(p) | chase(p) | eat(p) | drink(p) |   
+|:-----:|:--------:|:--------:|:------:|:--------:|:--------:|:-------:|:-------:|:--------:|   
+| Mary  | 1        | 1        | 1      | 1        | 0        | 1       | 0       | 0        |   
+| Tiger | 0        | 1        | 1      | 1        | 0        | 0       | 0       | 0        |   
+| Bison | 0        | 0        | 1      | 1        | 0        | 1       | 1       | 0        |   
+| Walnut| 0        | 0        | 0      | 0        | 1        | 0       | 1       | 0        |   
+| apple | 0        | 0        | 0      | 0        | 0        | 0       | 1       | 0        |                                                              
+| Water | 0        | 0        | 0      | 0        | 0        | 0       | 0       | 1        |
+
+And after running the simulation, a corresponding world event occurrence table is generated, in which the entries for 'may 
+not happen' event stay 0, while the 'may happen' entries actual frequency of the event happened in the simulation. We call
+this the 'event frequency' table.
+
+ |       | crack(a) | chase(a) | eat(a) | drink(a) | crack(p) | chase(p) | eat(p) | drink(p) |   
+|:-----:|:--------:|:--------:|:------:|:--------:|:--------:|:-------:|:-------:|:--------:|   
+| Mary  | 2        | 7        | 9      | 10        | 0        | 2       | 0       | 0        |   
+| Tiger | 0        | 9        | 5      | 12        | 0        | 0       | 0       | 0        |   
+| Bison | 0        | 0        | 8      | 6        | 0        | 3       | 2       | 0        |   
+| Walnut| 0        | 0        | 0      | 0        | 2        | 0       | 2       | 0        |   
+| apple | 0        | 0        | 0      | 0        | 0        | 0       | 3       | 0        |   
+| Water | 0        | 0        | 0      | 0        | 0        | 0       | 0       | 10        | 
+
+And for each model, corresponding to the table above, we have a table for the semantic relatedness between the nouns and
+verbs:
+
+|       | crack(a) | chase(a) | eat(a) | drink(a) | crack(p) | chase(p) | eat(p) | drink(p) |   
+|:-----:|:--------:|:--------:|:------:|:--------:|:--------:|:-------:|:-------:|:--------:|   
+| Mary  | 0.3        | 0.5        | 0.3      | 0.6        | 0.001        | 0.1       | 0.01       | 0.001        |   
+| Tiger | 0.05        | 0.6        | 0.4      | 0.5        | 0.001        | 0.01       | 0.001       | 0.001        |   
+| Bison | 0.01        | 0.05        | 0.6      | 0.7        | 0.001        | 0.3       | 0.2      | 0.01        |   
+| Walnut| 0.002     | 0.001        | 0.001      | 0.1        | 0.8        | 0.001       | 0.7       | 0.1        |   
+| apple | 0.001        | 0.002       | 0.001      | 0.1        | 0.1        | 0.001       | 0.3      | 0.1        |   
+| Water | 0.0001        | 0.0001       | 0.001      | 0.01        | 0.02        | 0.01       | 0.1       | 0.8        |
+
+We evaluate the models by how the model semantic relatedness ranks of nouns by verbs correlating to the corresponding ranks
+in the event frequency table. And the model ranks are formed directly from the verb column vectors. For example, in the table
+above, for crack(a), 'Mary' has the highest relatedness score, which means that this model 'thinks' that among all nouns,
+'Mary' is most likely to be the agent of the verb crack, therefore will be ranked top under 'crack(a)'. Than according to
+the magnitude of the numbers in the column, 'Mary' follows by Tiger, than by Bison and so on, which end up in the following
+model rank table:
+
+|       | crack(a) | chase(a) | eat(a) | drink(a) | crack(p) | chase(p) | eat(p) | drink(p) |   
+|:-----:|:--------:|:--------:|:------:|:--------:|:--------:|:-------:|:-------:|:--------:|   
+| Mary  | 1        | 2        | 3      | 2        | 5        | 2       | 5       | 5.5        |   
+| Tiger | 2        | 1        | 2      | 3        | 5        | 3.5       | 6       | 5.5        |   
+| Bison | 3        | 3        | 1      | 1        | 5        | 1       | 2       | 3        |   
+| Walnut| 4        | 4        | 5      | 5        | 1        | 5.5       | 1       | 3        |   
+| apple | 5        | 5        | 5      | 5        | 2        | 5.5       | 3       | 3        |
+| Water | 6        | 6        | 5      | 5        | 3        | 3.5       | 4       | 1        |
+
+To form the corresponding rank in the event frequency table, we adjust the method a little bit. Notice that in the word semantic
+table, there are lots of zeroes, featuring the rule in the world: those events may not happen in the world, and therefore
+do not occur in the simulation. Remember that in D1, the second goal is to form reasonable inference on what has not been
+observed in the corpus. Here in the event frequency table, we see that all nouns other than 'Mary' have not been an agent
+for the verb 'crack'. But we still want to see which noun is more likely to couple with the verb, given the absence of coupling
+in the corpus (in other word, what combination make more sense?). We form the judgement basing on to what extent is the noun
+'similar' to the 'Mary', the actual agent of 'crack' in the simulation: the more similar is a noun to Mary, we judge it as more
+likely being the agent of crack. And to get the similarity, we compare the 'agent half' row vector of the noun's to that 
+of 'Mary's', and get a similarity score, we order the similarity scores, and rank them after 'Mary' in the column for 
+'crack(a)'. We do this for every single verb(thematic role), and have the following corpus rank table:
+
+|       | crack(a) | chase(a) | eat(a) | drink(a) | crack(p) | chase(p) | eat(p) | drink(p) |   
+|:-----:|:--------:|:--------:|:------:|:--------:|:--------:|:-------:|:-------:|:--------:|   
+| Mary  | 1        | 2        | 1      | 2        | 5        | 2       | 4       | 4        |   
+| Tiger | 2        | 1        | 3      | 1        | 5        | 5.5       | 5.5       | 4        |   
+| Bison | 3        | 3        | 2      | 3        | 3        | 1       | 2.5      | 4        |   
+| Walnut| 5        | 5        | 5      | 5        | 1        | 4       | 2.5       | 4        |   
+| apple | 5        | 5        | 5      | 5        | 2        | 3       | 1       | 4        |   
+| Water | 5        | 5        | 5      | 5        | 5        | 5.5       | 5.5       | 1        |
+
+Finally, for each semantic model (there are 3024 of them in total), we correlate the model rank table (in terms of the
+columns) to the corpus rank table, resulting in model correlation scores. The higher the score is, the more similar the model
+semantic representation similar to the corpus rank, and therefore is considered more capable of form inferring unobserved 
+but possible semantic relations basing on the corpus.
 
 
 
 
 
 
-                                                           
+
+
+
+     

@@ -7,6 +7,13 @@ PAD = '*PAD*'
 VERBOSE = False
 period = True
 
+########################################################################################################################
+# spatial model analysis:
+# computing semantic relatedness scores of the spatial models(similarity based), where scores are the similarities of
+# spatial word embeddings
+########################################################################################################################
+
+
 def get_matrix_connected(matrix, coeff):
     n_row = np.shape(matrix)[0]
     n_col = np.shape(matrix)[1]
@@ -26,18 +33,26 @@ def get_matrix_connected(matrix, coeff):
 def get_sim(matrix,source,target, vocab_index_dict, sim_type):
     #print(vocab_index_dict)
     #print(matrix)
+    sim = 0
     v1 = matrix[vocab_index_dict[source]]
     v2 = matrix[vocab_index_dict[target]]
     if VERBOSE:
         print(source, target)
         print(v1, v2)
-
-    if sim_type == 'cos':
-        sim = np.inner(v1,v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
-    elif sim_type == 'distance':
+    if sim_type == 'cos' or sim_type == 'r_cos':
+        norm1 = np.linalg.norm(v1)
+        norm2 = np.linalg.norm(v2)
+        if norm1 ==0 or norm2 ==0:
+            if norm1 ==0 and norm1 ==0:
+                sim = 1
+            else:
+                sim = 0
+        else:
+            sim = np.inner(v1,v2)/(norm2*norm1)
+    elif sim_type == 'distance' or sim_type == 'r_distance':
         v = v1 - v2
         sim = 1/(math.sqrt(np.inner(v,v))+1)
-    elif sim_type == 'corr':
+    elif sim_type == 'corr' or sim_type == 'r_corr':
         sim = np.corrcoef(v1,v2)[0][1]
     #print(sim_type,sim)
     return sim

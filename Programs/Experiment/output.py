@@ -64,18 +64,13 @@ def output_corpora(corpora, num_run):
                     writer.writerow(row)
 
 
-def corr_plot(hd_matrix, chosen_para, parameters, parameter_dict, models):
+def corr_plot(hd_matrix, chosen_para, parameters, parameter_dict):
     # given the 3 dimension matrix, plot bar graph to show three way interaction in the parameter space
     collapse = list(range(len(parameter_dict)+1))
     chosen_id = []
     for variable in chosen_para:
-        if variable == 'models':
-            chosen_id.append(collapse.pop())
-            parameter_dict['models'] = models
-            parameters.append('models')
-        else:
-            chosen_id.append(parameters.index(variable))
-            collapse.remove(parameters.index(variable))
+        chosen_id.append(parameters.index(variable))
+        collapse.remove(parameters.index(variable))
     chosen_id.sort()
     collapse = tuple(collapse)
     data_matrix = hd_matrix.mean(collapse)
@@ -92,7 +87,7 @@ def corr_plot(hd_matrix, chosen_para, parameters, parameter_dict, models):
     for i in range(row_num):
         for j in range(col_num):
             if x_id == 0:
-                to_plot = data_matrix[:i,j]
+                to_plot = data_matrix[:,i,j]
             elif x_id == 1:
                 to_plot = data_matrix[i,:,j]
             else:

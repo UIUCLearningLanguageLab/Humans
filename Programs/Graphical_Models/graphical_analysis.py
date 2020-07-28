@@ -97,22 +97,27 @@ def get_adjacency_matrix(net):
     return W,length
 
 
-def activation_spreading_analysis(adjacency_matrix, source, target, node_list):
+def activation_spreading_analysis(adjacency_matrix, source, target, node_list, dg):
     # Spreading activation to measure the functional distance from source to target
     # where source is one item, and target is a list(of items)
     # returns a sr_dictionary consisting of sr from the source to all targets
-    W = adjacency_matrix + np.transpose(adjacency_matrix)
+    if dg == False:
+        W = adjacency_matrix + np.transpose(adjacency_matrix)
+    else:
+        W = adjacency_matrix
 
     W = np.asmatrix(W)
     length = W.shape[0]
     W = lil_matrix(W)
-    normalizer = W.sum(1)
-    for i in range(length):
-        for j in range(length):
-            if normalizer[i][0, 0] == 0:
-                W[i, j] = 0
-            else:
-                W[i, j] = W[i, j] / normalizer[i][0, 0]
+
+    if dg == False:
+        normalizer = W.sum(1)
+        for i in range(length):
+            for j in range(length):
+                if normalizer[i][0, 0] == 0:
+                    W[i, j] = 0
+                else:
+                    W[i, j] = W[i, j] / normalizer[i][0, 0]
     activation = np.zeros((1,length),float)
     fired = np.ones((1, length), float)
     activation[0, node_list.index(source)] = 1
@@ -141,7 +146,7 @@ def activation_spreading_analysis(adjacency_matrix, source, target, node_list):
     semantic_relatedness_dict = {}
     for word in target:
         semantic_relatedness_dict[word] = activation_recorder[0, node_list.index(word)]
-    #print(semantic_relatedness_dict)
+
 
     return semantic_relatedness_dict
 
@@ -161,14 +166,14 @@ def get_activation_plot(net, activation_recorder, node_list):
         net.plot_lexical_network(color_list)
         plt.show()
 
-def get_sr_matrix(matrix, word_list1, word_list2, node_list):
+def get_sr_matrix(matrix, word_list1, word_list2, node_list, dg):
     # word_list1 is for rows, and word_list2 for colums
     # in syntagmatic task, word_list1 are nouns, and word_list2 verbs
     # nouns are targets, while verbs are sources
     # return a matrix of semantic relatedness from sr_dictionaries
     sr_matrix = np.zeros((len(word_list1),len(word_list2)))
     for source in word_list2:
-        sr_dict = activation_spreading_analysis(matrix, source, word_list1, node_list)
+        sr_dict = activation_spreading_analysis(matrix, source, word_list1, node_list, dg)
         for target in word_list1:
             id1 = word_list1.index(target)
             id2 = word_list2.index(source)

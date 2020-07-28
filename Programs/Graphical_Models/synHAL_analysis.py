@@ -1,5 +1,5 @@
 import numpy as np
-from Programs.Syntactic_Models import STN
+from Programs.Graphical_Models import STN
 import networkx as nx
 import math
 VERBOSE = False
