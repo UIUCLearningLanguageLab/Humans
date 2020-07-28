@@ -116,7 +116,7 @@ liquid. Going back to the general goal discussed in the introduction, a semantic
 For example, suppose in the corpus, we observed lots of 'eat apple' and 'eat banana', and another noun 'lingou' which has
 never been coupled with 'eat'in the corpus. The semantic model should first in the representation account for the 'fact' that
 'eat' can go with 'apple' and banana, while infer whether 'eat lingou' make sense, basing on how similar is 'lingou' to
-'apple' and 'banana'. If in the corpus, lingou always appear in the exact same position as 'apple' and 
+'apple' and 'banana'. If in the corpus, 'lingou' always appear in the exact same position as 'apple' and 
 'banana' wihtin a sentence, and it couples with lots of other verbs and adjectives which also goes with the two fruits, 
 the semantic representation should be able to form the induction that 'lingou' might be something that similar
 to a fruit, therefore edible and could be an argument for 'eat'.
@@ -203,7 +203,7 @@ so that all models work on the same corpora.
 
 However, while sticking to the purpose of studying word semantic structures, one may argue what is needed is mere the corpus,
 thus, a backed up world may look redundant. Instead, the classic way to generate corpus is to use generative grammars,
-for example, CFG or PCFG (Probablistic Context Free Grammar). However, such generative grammars are not powerful enough 
+for example, CFG or PCFG (Probabilistic Context Free Grammar). However, such generative grammars are not powerful enough 
 when it comes to generate corpora with rich semantics, and they also lack a sense of reality, that a world based corpus 
 may provide.
 
@@ -231,9 +231,9 @@ p2 has to be 1, however, p1 can't be 0, otherwise, 'drink' will not be in the co
 if p2 = 1, and we don't want 'eat coffee', then p1 has to be 1, which implies 'eat' will not be in the corpus, which
 is not what we want. Therefore, we see that such a corpus can not be realized by the PCFG, above.
 
-A crital problem for the PCFG above is that it makes the distribution of argument nouns independent of the choice of 
+A critical problem for the PCFG above is that it makes the distribution of argument nouns independent of the choice of 
 verb (context free), which is in most case, not acceptable for a language embedded with realistic semantics. Because in
-realistic semantics, the combination is interdepedent, we drink liquid and eat foods, the nouns to be take as argument
+realistic semantics, the combination is interdependent, we drink liquid and eat foods, the nouns to be take as argument
 depend on what is the verb (predicate, event). This makes it very difficult for a PCFG to generate a semantic rich
 corpus.
 
@@ -248,12 +248,12 @@ N1 -> coffee, 1 <br />
 N2 -> apple, 1 <br />
 
 In this way, we are explicitly writing down the two legal phrases in the rules, and we have to divide the set of verbs and
-nouns into discrete singleton, because they all have different coupliing behaviors.
+nouns into discrete singleton, because they all have different coupling behaviors.
 
 A corollary follows that one has to spell out every single sentence (one line of rule, for one sentence), and make a 
 grammatical category for almost every single word to generate a corpus with realistic semantics. Because the richness of
 semantics implying (almost) every single word has its own meaning, reflected in its coupling with other words. Therefore,
-there will be no rule like A -> B C, where B and C stand for non-singleton, otherwsie, for B1 and B2 in set B, they
+there will be no rule like A -> B C, where B and C stand for non-singleton, otherwise, for B1 and B2 in set B, they
 have the exact same meaning. 
 
 Such a corollary implies that PCFG style grammar, without spelling out every single sentence 
@@ -317,14 +317,14 @@ needs to go get it, otherwise, there is no such an action. In this case, we can'
 grand event by mere a sequence of sub events, since the latter sub-event might differ based on the 
 choice made in some earlier event. In this case, wherever there is a choice to make, we need to have
 a 'parallel design', to decompose the larger event into several options. For example, for the 'eating at Subway'
-event, after 'ordering', it can be divided into two 'branches', therefore, two paralleled subevent, one
+event, after 'ordering', it can be divided into two 'branches', therefore, two paralleled sub events, one
 representing the option with soda, and the other not. Under the option without soda, it is followed by 
 paying and eating, while for the one with soda, it adds a 'fetching drink' event between paying and eating.
 
 The example above summarize the basic organization of our daily life events. Almost for every event with a 
 procedure, it can be decomposed as a combination of serial combined event and parallel combined events. 
 The serial decomposition occurs once the event can be divided into a sequential steps or linear order, while
-the parallel decompostion comes in whenever there is a choice to make. 
+the parallel decomposition comes in whenever there is a choice to make. 
 
 Here, we use the event tree structure to organize how the agents act in the world. The leaves of an event tree
 are atomic events, which correspond to the verbs in the target corpus. The atomic actions are combined in
@@ -450,7 +450,7 @@ The distributional information is in turn, critical to the semantic representati
 component of the word semantics.
 
 Also in W1, we have design to differentiate the agents by what they eat: humans eat herbivores, fruits and nuts, carnivores
-eat herbivores, and herbivores eat plants. The agent-paitent syntagmatic relations, although not included in the table
+eat herbivores, and herbivores eat plants. The agent-patient syntagmatic relations, although not included in the table
 above, also contributes to the world semantics, and would also be featured as distributional patterns in the corresponding
 corpora. 
 
@@ -458,7 +458,7 @@ And binding some verb-noun, and agent-patient relation, we have some D2 here in 
 like fruits and plants that can be eaten, different from the drinks, which can be drunk but not eaten. While when comparing
 fruits and plants, the distinction is not only in the action, but also in the agent they couple with. Although both fruits
 and plants can be eaten, fruits are only eaten by humans, while plants only by herbivores, and this is exactly D2. While 
-W1 is not aimed for studying D2, we see the possbility in the design. 
+W1 is not aimed for studying D2, we see the possibility in the design. 
 
 ###### Ordered events
 
@@ -506,7 +506,7 @@ To spell it out, semantic models built on linguistic input rely on such fact: in
 all sorts of information (including linguistic information), and they form semantic memory. Using the 
 linguistic data to train the models and form representation, is a simulation of the forming semantic representation 
 'in the wild'. The linguistic data, in most of current models, are treated as sequences of symbols, and the very first
-encoding process in most cases is 'word count', which is a cognitvely plausible process of learning. In this way, training
+encoding process in most cases is 'word count', which is a cognitively plausible process of learning. In this way, training
 models on linguistic input is not only about the representation, but also the cognitive process. 
 
 On the other hand, the non-linguistic data, which are collected empirically, is 'resultant' from the beginning. Not to 
@@ -565,7 +565,7 @@ linguistic components in the linguistic data.
 In the wild, the corpus includes too many elements, e.g. punctuation, all types of inflections(aspect, tense, voice),
 which are critical to word semantics, to the meaning of the language itself, but less to semantic memory. To train a semantic
 model speaking to formal semantic properties as D1, and D2, it is hard to say whether these linguistic elements have any
-significance, while they are hard to controll as variables. 
+significance, while they are hard to control as variables. 
 
 Therefore, we need a corpus that is less 'linguistic', in the way that it involves meanings relating to semantic memory,
 but less to the language (for example, 'A dog is chasing the cat', and 'The dog chased a cat' have different meanings for
@@ -616,13 +616,13 @@ In general, the semantic models we look at are the four types of models which ca
 | Space | co-occurrence matrix | similarity matrix |
 | Graph | co-occurrence graph  | similarity graph  |
 
-We have a 2 X 2 design for the study. Fisrt we look at the representional data structures, where 'space' referring to encode
+We have a 2 X 2 design for the study. First we look at the representational data structures, where 'space' referring to encode
 words as vectors in a feature vector space, and 'graph' referring to the graph generated from the corresponding spatial 
 matrix (as the adjacency matrix). And then we differentiate the co-occurrence and similarity encoding, where the co-occurrence
 refers to the co-occurrence count, and similarity refers to the word-word similarity scores formed by correlating (or 
 other computation) the word vectors in the co-occurrence space. Correspondingly, the co-occurrence graph refers to
 the graph formed by co-occurrence matrix, and therefore is equivalent to represent 'sentences' as chains fo word nodes, 
-and join the chains by shared words; while similarity graph is derived from simliarity matrix, with nodes representing 
+and join the chains by shared words; while similarity graph is derived from similiarity matrix, with nodes representing 
 the words, and the edges as the similariy scores between the word pairs.
 
 Apart from the basic 2 X 2 design, we further divdie the similarity half by how the similarity score (cosine, 2-distance, 
@@ -649,7 +649,7 @@ therefore words across sentences are not considered in the same sequence, thus a
 In all the semantic models above, a model specific semantic space is formed, and therefore, the semantic relation (relatedness)
 between the words can be derived from the representations. For spatial representations, the relatedness between word pairs
 are the corresponding entries in the matrix, while for the graphical models, the relatedness is computed by an spreading-activation
-style measure, where to compute the relatedness from word A to B, we activate word A with activaion level 1, and measure
+style measure, where to compute the relatedness from word A to B, we activate word A with activation level 1, and measure
 the amount of activation flowing to B at the first time, and the activation in the network flows from a node to its neighbors 
 proportional to the weights of the edges linking the nodes and its neighbors, say, A links to two nodes, B and C, with
 weight 0.3 and 0.7, then 0.3 activation flows to B, while 0.7 flows to A.
