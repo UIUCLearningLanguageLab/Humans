@@ -1,0 +1,11 @@
+nouns,going_to,searching,chasing,throwing_at,shooting,trapping,biting,stabbing,gathering,butchering,cooking,eating,peeling,cracking,drinking,laying_down,sleeping,waking_up,getting_up,resting,going_to,searching,chasing,throwing_at,shooting,trapping,biting,stabbing,gathering,butchering,cooking,eating,peeling,cracking,drinking,laying_down,sleeping,waking_up,getting_up,resting
+human,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+carnivore,1,1,1,0,0,0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+herb_l,1,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,1,0,0,1,0,1,1,1,1,0,0,0,0,0,0,0,0
+herb_m,1,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,0,1,1,1,1,1,1,1
+herb_s,1,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1
+fruit,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0
+nut,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,0
+plant,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0
+drink,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0
+location,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
