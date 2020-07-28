@@ -603,6 +603,68 @@ here we start with the minimal set up, with what we need for the current researc
 
 ## Semantic Models
 
+The semantic models are trained on the corpus described in the previous sections, forming its model specific semantic 
+representation. The 'semantic representation' refers to the semantic space a model construct basing on the corpus. To be 
+more specific, all models in the project encode the distributional information of the language by doing the word by word
+co-occurrence count, and form the WW co-occurrence matrix. Basing on this common co-occurrence matrix, different models
+have its specific further processing, ending up its own semantic representation.
+
+In general, the semantic models we look at are the four types of models which can be summarized in the following table:
+
+|       | co-occurrence | similarity |
+|:-----:|:-------------:|:----------:|
+| Space | co-occurrence matrix | similarity matrix |
+| Graph | co-occurrence graph  | similarity graph  |
+
+We have a 2 X 2 design for the study. Fisrt we look at the representional data structures, where 'space' referring to encode
+words as vectors in a feature vector space, and 'graph' referring to the graph generated from the corresponding spatial 
+matrix (as the adjacency matrix). And then we differentiate the co-occurrence and similarity encoding, where the co-occurrence
+refers to the co-occurrence count, and similarity refers to the word-word similarity scores formed by correlating (or 
+other computation) the word vectors in the co-occurrence space. Correspondingly, the co-occurrence graph refers to
+the graph formed by co-occurrence matrix, and therefore is equivalent to represent 'sentences' as chains fo word nodes, 
+and join the chains by shared words; while similarity graph is derived from simliarity matrix, with nodes representing 
+the words, and the edges as the similariy scores between the word pairs.
+
+Apart from the basic 2 X 2 design, we further divdie the similarity half by how the similarity score (cosine, 2-distance, 
+correlation) is computed, and whether there is a svd reduction (svd, no svd) when forming the similarity matirx, and end
+up 6 variations for each similarity model therefore instead of a 2 X 2 design, it ends up a 2 X 7 design.
+
+And for each of the 14 conditions, we have 216 variations of models on 6 dimensions:
+
+When forming the corpus:<br />
+**period**: {yes, no} <br />
+**boundary**: {yes, no} <br />
+
+When forming co-oc matrix: <br />
+**Window size**:{1,2,7} <br />
+**Window weight**:{flat, linear} <br />
+**Window type**: {flat, linear} <br />
+**normalization**: {no, row-log, ppmi} <br />
+
+Where 'period' refers to whether adding a period at the end of each sentence, and 'boundary' refers to whether treating
+each sentence as an independent sequence, if no, the word window can go across the sentence boundary, and words across the
+sentences are considered as in the same sequence (bag of words), and if yes, the word window stop at the sentence boundary, 
+therefore words across sentences are not considered in the same sequence, thus are not counted in the co-occurrence count.
+
+In all the semantic models above, a model specific semantic space is formed, and therefore, the semantic relation (relatedness)
+between the words can be derived from the representations. For spatial representations, the relatedness between word pairs
+are the corresponding entries in the matrix, while for the graphical models, the relatedness is computed by an spreading-activation
+style measure, where to compute the relatedness from word A to B, we activate word A with activaion level 1, and measure
+the amount of activation flowing to B at the first time, and the activation in the network flows from a node to its neighbors 
+proportional to the weights of the edges linking the nodes and its neighbors, say, A links to two nodes, B and C, with
+weight 0.3 and 0.7, then 0.3 activation flows to B, while 0.7 flows to A.
+
+And finally, for each model variations in the design, it ends up with a semantic relatedness table, inlcuding the semantic 
+relatedness score between all word pairs in the corpus.
 
 ## Evaluation
 
+
+ 
+
+
+
+
+
+
+                                                           
