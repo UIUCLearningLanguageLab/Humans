@@ -36,7 +36,7 @@ class World:
 
         # animal taxonomy
         self.animal_taxo = {'herbivore':['rabbit', 'squirrel', 'fox', 'mouflon', 'boar', 'ibex', 'bison',
-                           'mammoth','auroch'],'carnivore':['wolf','tiger','hyena']}
+                           'buffalo','auroch'],'carnivore':['wolf','tiger','hyena']}
 
         self.animal_type = ['carnivore','herbivore']
 
@@ -50,6 +50,9 @@ class World:
                                 'auroch':(1000,2000), 'tiger':(400,600),'wolf':(70,100),'hyena':(90,120)}
         self.herbivore_list = []
         self.carnivore_list = []
+
+        # animals already been searched, not longer in the pool for further searching
+        self.searched_list = []
 
         ###########################################################################################################
         # plant_resources
