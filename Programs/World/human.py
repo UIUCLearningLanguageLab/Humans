@@ -25,6 +25,7 @@ class Human:
         self.id_number = len(self.world.human_list)
         self.name = name
         self.type = 'human'
+        self.animal_type = 'human'
         self.category = 'human'
 
         # a human has basic drives which motivate their actions, currently including hunger, sleepiness and thirst
@@ -125,7 +126,8 @@ class Human:
     def get_target(self):
         target_list = []
         for herbivore in self.world.herbivore_list:
-            target_list.append(herbivore)
+            if herbivore not in self.world.searched_list:
+                target_list.append(herbivore)
         for nut in self.world.nut_list:
             target_list.append(nut)
         for fruit in self.world.fruit_list:
@@ -271,14 +273,7 @@ class Human:
             self.verb.append(event_name)
         if event_name not in self.world.verb:
             self.world.verb.append(event_name)
-        if (event_name, agent) not in self.v_a_pairs:  # record verb_agent
-            self.v_a_pairs[(event_name, agent)] = 1
-        else:
-            self.v_a_pairs[(event_name, agent)] += 1
-        if (event_name, agent) not in self.world.v_a_pairs:
-            self.world.v_a_pairs[(event_name, agent)] = 1
-        else:
-            self.world.v_a_pairs[(event_name, agent)] += 1
+
         #  if self.current_event[0] == 0:
         #      print('{} is hungry.'.format(self.name))
         #  elif self.current_event[0] == 1:
@@ -344,6 +339,15 @@ class Human:
             self.world.corpus.append(sentence)
             self.linear_corpus.append(linear_sent)
             self.world.linear_corpus.append(linear_sent)
+
+            if (event_name, agent) not in self.v_a_pairs:  # record verb_agent
+                self.v_a_pairs[(event_name, agent)] = 1
+            else:
+                self.v_a_pairs[(event_name, agent)] += 1
+            if (event_name, agent) not in self.world.v_a_pairs:
+                self.world.v_a_pairs[(event_name, agent)] = 1
+            else:
+                self.world.v_a_pairs[(event_name, agent)] += 1
 
             if focus != None:
                 if focus not in self.p_noun:
@@ -552,6 +556,8 @@ class Human:
         if len(game_list) > 0:
             choice = random.randint(0,len(game_list)-1)
             self.focus = game_list[choice]
+            if self.focus.type == 'animal': # if found an herbivore animal
+                self.world.searched_list.append(self.focus)
             self.event_dict[self.current_event][1] = 0
         self.hunger = self.hunger + movement * self.state_change['searching'][0]
 
@@ -614,9 +620,10 @@ class Human:
                 if self.focus in self.world.herbivore_list:
                     self.world.herbivore_list.remove(self.focus)
                     self.focus.alive = False
-                self.food_target.remove(self.focus)
+                self.food_target = self.food_target.remove(self.focus)
         else:
             self.event_dict[self.current_event][1] = -1
+            self.world.searched_list.remove(self.focus)
             if VERBOSE:
                 print('hunting action failed')
         self.hunger = self.hunger + self.state_change[event_name][0]
@@ -637,7 +644,6 @@ class Human:
                         self.focus.remain_size = 0
                     else:
                         self.focus.remain_size = self.focus.remain_size - self.focus.gather_size
-
             self.event_dict[self.current_event][1] = 0
 
         elif event_name == 'butchering':  # once butchered, the animal disappears and turned into food, and get stored
