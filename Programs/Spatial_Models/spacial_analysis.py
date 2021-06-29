@@ -13,6 +13,16 @@ period = True
 # spatial word embeddings
 ########################################################################################################################
 
+def trivial_ranking(ranking):
+    # telling if the ranking is trivial(all ranks are the same)
+    flat_ranking = ranking.flatten()
+    length = np.shape(flat_ranking)[0]
+    triviality = True
+    for i in range(length):
+        if flat_ranking[i] != flat_ranking[0]:
+            triviality = False
+            break
+    return triviality
 
 def get_matrix_connected(matrix, coeff):
     n_row = np.shape(matrix)[0]
@@ -53,7 +63,15 @@ def get_sim(matrix,source,target, vocab_index_dict, sim_type):
         v = v1 - v2
         sim = 1/(math.sqrt(np.inner(v,v))+1)
     elif sim_type == 'corr' or sim_type == 'r_corr':
-        sim = np.corrcoef(v1,v2)[0][1]
+        t1 = trivial_ranking(v1)
+        t2 = trivial_ranking(v2)
+        if t1 != t2:
+            sim = 0
+        else:
+            if t1:
+                sim = 1
+            else:
+                sim = np.corrcoef(v1,v2)[0][1]
     #print(sim_type,sim)
     return sim
 
