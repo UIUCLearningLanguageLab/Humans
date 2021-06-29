@@ -4,7 +4,12 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 from Programs.Experiment import generate_world, build_models, paradigmatic_task , syntagmatic_task, output
 
-num_run = 1
+# Experiment type:
+# test world only for world generation
+# s_task for conducting syntagmatic tasks
+# p_task for conducting paradigmatic tasks
+
+num_run = 10
 test_world = True
 s_task = False
 p_task = False
@@ -23,7 +28,7 @@ parameter_dict = { 'period':['yes','no'],
                    'window_weight': ['flat','linear'],
                    'window_type': ['forward','backward','summed'],  # , 'backward', 'summed', 'concatenated'],
                    'normalization': ['log','ppmi','non'],
-                   'encode': ['cooc','cos','distance','corr','r_cos','r_distance','r_corr'],
+                   'encode': ['distance','cos','corr','r_distance','r_cos','r_corr','cooc'],
                    'representation': ['space','graph']
                    }
 
@@ -107,8 +112,8 @@ def run_experiment(num_run):
     wb_dict = {'world':[]}
     corr_data_matrices = {}
     wb_data_matrix = np.zeros((4*num_run, num_model))
-    ranking_data_matrix = np.zeros((1, num_model))
-    relate_data_matrix = np.zeros((1, num_model))
+    ranking_data_matrix = np.zeros((1, num_model+1))
+    relate_data_matrix = np.zeros((1, num_model+1))
 
     for i in range(num_run):
         print()
@@ -118,7 +123,7 @@ def run_experiment(num_run):
         # create a world and get world info
         the_world = generate_world.running_world()
         if test_world:
-            break
+            continue
         profiles, linear_corpus = generate_world.get_world_info(the_world)
         corpora.append(linear_corpus)
         profile = profiles[0]
@@ -132,15 +137,20 @@ def run_experiment(num_run):
         verbs = kit['verbs']
         corr_dict['world'].append(i+1)
         thematic_roles = ['a','p']
-        for verb in verbs:
-            for role in thematic_roles:
+        for role in thematic_roles:
+            for verb in verbs:
                 for noun in noun_stems:
                     phrase = verb + '_' + noun + '_' + role
                     ranking_dict['item'].append(phrase)
                     ranking_dict['world'].append(i+1)
-        standard_ranking = syntagmatic_task.get_standard_ranking(kit,'combine','cos')[0]
-        current_ranking_matrix = standard_ranking.reshape(len(standard_ranking),1)
-        current_relate_matrix = standard_ranking.reshape(len(standard_ranking),1)
+        standard_ranking = syntagmatic_task.get_standard_ranking(kit,'separate','cos')[0]
+        if len(standard_ranking.shape) == 2:
+            (n,m) = standard_ranking.shape
+        else:
+            n = 1
+            m = standard_ranking.shape[0]
+        current_ranking_matrix = standard_ranking.reshape(n * m,1)
+        current_relate_matrix = standard_ranking.reshape(n * m,1)
 
         # use world info to build models according each model parameter
         for model_parameters in model_para_list:
@@ -164,7 +174,7 @@ def run_experiment(num_run):
                     boundary = False
                 word_bag, vocab_list, vocab_index_dict = build_models.corpus_transformation(linear_corpus, period, boundary)
                 #print(word_bag)
-                #print(vocab_list)
+                #print(vocab_index_dict)
                 kit['vocab_list'] = vocab_list
                 kit['vocab_index_dict'] = vocab_index_dict
                 cooc_matrix, sim_matrix = build_models.build_model(word_bag, vocab_list, vocab_index_dict,
@@ -192,21 +202,21 @@ def run_experiment(num_run):
                     wb_data_matrix[4*i+j][id_parameters] = within_between[j]
 
             if s_task:
-                print(model_parameters)
+                #print(model_parameters)
                 kit['model_num'] = model_parameters['Model']
-                model_corr_dict, output_ranking, output_relate = syntagmatic_task.run_task(kit, encode, rep, dg)
-                print(model_corr_dict)
-                print()
+                model_corr_dict, output_ranking, output_relate, standard_rankings = syntagmatic_task.run_task(kit, encode, rep, dg)
+                #print(model_corr_dict)
+                #print()
 
                 current_ranking_matrix = np.concatenate((current_ranking_matrix, output_ranking), 1)
                 current_relate_matrix = np.concatenate((current_relate_matrix, output_relate), 1)
                 if len(corr_data_matrices) == 0:
                     for standard in model_corr_dict:
-                        corr_data_matrices[standard] = np.zeros((num_run, num_model))
+                        corr_data_matrices[standard] = np.zeros((num_run, num_model+1))
                 else:
                     for standard in model_corr_dict:
                         corr_data_matrix = corr_data_matrices[standard]
-                        corr_data_matrix[i][id_parameters] = model_corr_dict[standard]
+                        corr_data_matrix[i][id_parameters+1] = model_corr_dict[standard]
 
             if id_parameters % 300 == 0:
                 print(str(id_parameters) + ' models run')
@@ -215,9 +225,9 @@ def run_experiment(num_run):
         # plot_svd(cooc_var_list, svd_path, i)
 
         if s_task:
-            current_ranking_matrix = current_ranking_matrix[0:,1:]
+            #current_ranking_matrix = current_ranking_matrix[0:,1:]
             ranking_data_matrix = np.concatenate((ranking_data_matrix,current_ranking_matrix),0)
-            current_relate_matrix = current_relate_matrix[0:, 1:]
+            #current_relate_matrix = current_relate_matrix[0:, 1:]
             relate_data_matrix = np.concatenate((relate_data_matrix, current_relate_matrix),0)
     if s_task:
         ranking_data_matrix = ranking_data_matrix[1:]
@@ -227,10 +237,10 @@ def run_experiment(num_run):
     if s_task:
         for standard in corr_data_matrices:
             corr_data_matrix = corr_data_matrices[standard]
-            file_name = standard + ".csv"
-            #output.output_exp(num_model, corr_header, corr_dict, file_name, corr_data_matrix)
-        #output.output_exp(num_model, ranking_header, ranking_dict,  's_ranking.csv', ranking_data_matrix)
-        #output.output_exp(num_model, ranking_header, ranking_dict,  's_relateness.csv', relate_data_matrix)
+            file_name = standard + "_aa.csv" # after verb-agent count is adjusted to be the same as verb-patient
+            output.output_exp(num_model, corr_header, corr_dict, file_name, corr_data_matrix)
+        #output.output_exp(num_model, ranking_header, ranking_dict,  's_ranking_v.csv', ranking_data_matrix)
+        #output.output_exp(num_model, ranking_header, ranking_dict,  's_relateness_v.csv', relate_data_matrix)
     if p_task:
         output.output_exp(num_model, wb_header, wb_dict, 'within_between.csv', wb_data_matrix)
 
