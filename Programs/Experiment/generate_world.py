@@ -2,7 +2,7 @@ from Programs.World import world, config
 import csv
 import numpy as np
 
-VERBOSE = True
+VERBOSE = False
 
 
 def running_world():  # running the world and get the corpus
@@ -37,12 +37,26 @@ def running_world():  # running the world and get the corpus
         else:
             the_world.pairs[pair] = the_world.t_p_pairs[pair]
     length = len(the_world.corpus)
+    num_token = 0
+    for sent in the_world.linear_corpus:
+        num = len(sent)
+        num_token = num_token + num
+
     l_verb = len(the_world.verb)
     l_t_verb = len(the_world.t_verb)
     l_agent = len(the_world.agent)
     l_p_noun = len(the_world.p_noun)
+
+    print('{} sentences'.format(length))
+    print('{} word tokens'.format(num_token))
     if VERBOSE:
+        print('First 100 sentences')
+        print()
+        for sentence in the_world.linear_corpus[:100]:
+            print(sentence)
+        print()
         print('{} sentences'.format(length))
+        print('{} word tokens'.format(num_token))
         print('verbs: {}'.format(the_world.verb))
         print('transitive verbs: {}'.format(the_world.t_verb))
         print('agents: {}'.format(the_world.agent))
