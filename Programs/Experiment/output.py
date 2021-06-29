@@ -15,8 +15,8 @@ def output_exp(num_model, init_header, init_dict, filename, data_matrix):
         for head in init_header:
             fieldnames.append(head)
         init_len = len(init_header)
-        for i in range(num_model):
-            model = 'M' + str(i+1)
+        for i in range(num_model+1):
+            model = 'M' + str(i)
             fieldnames.append(model)
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
