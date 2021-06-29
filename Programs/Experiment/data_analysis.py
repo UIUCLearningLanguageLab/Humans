@@ -6,14 +6,27 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 
-path = Path().cwd().parent.parent / 'Data' / 'cos_separate.csv'
+plot_size = 20
+
+two_encode_types = True
+
+path = Path().cwd().parent.parent / 'Data' / 'cos_separate_for_plot.csv'
 model_path = Path().cwd().parent.parent / 'Data' / 'model_dict.csv'
+mean_path = Path().cwd().parent.parent / 'Data' / 'mean_pd.csv'
 
 save_path1 = str(Path().cwd().parent.parent / 'Data' / 's_performance')
 save_path2 = str(Path().cwd().parent.parent / 'Data' / '3ways')
 save_path3 = str(Path().cwd().parent.parent / 'Data' / '2way_violin')
+save_path_pd =  str(Path().cwd().parent.parent / 'Data' / 'mean_pd.csv')
 
-plot_size = 33
+if two_encode_types:
+    save_raw_pd = str(Path().cwd().parent.parent / 'Data' / 'raw_2by2.csv')
+else:
+    save_raw_pd = str(Path().cwd().parent.parent / 'Data' / 'raw_2by7.csv')
+
+save_path_2by2 =  str(Path().cwd().parent.parent / 'Data' / '2by2.png')
+
+
 
 
 # caculate mean performance from stored data
@@ -22,7 +35,7 @@ def get_performance(path):
     with open(path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for row in csv_reader:
-            row_data = row[1:]
+            row_data = row[2:]
             if csv_reader.line_num == 1:
                 models = row_data
             if csv_reader.line_num == 2:
@@ -44,7 +57,88 @@ def get_dataframe(mean, std_error, dict_path):
     mean_pd = pd.read_csv(dict_path)
     mean_pd['mean'] = mean
     mean_pd['std_error'] = std_error
+    mean_pd.to_csv(save_path_pd)
     return mean_pd
+
+# store raw data in the parameterized dataframe
+def get_raw_dataframe(dict_path, raw_data_path):
+    raw_pd = pd.read_csv(dict_path)
+    add_pd = pd.read_csv(dict_path)
+
+    if two_encode_types:
+        raw_pd['encode'] = raw_pd['encode'].replace(['distance','cos','corr','r_distance','r_cos','r_corr'],'sim')
+        add_pd['encode'] = raw_pd['encode'].replace(['distance', 'cos', 'corr', 'r_distance', 'r_cos', 'r_corr'], 'sim')
+
+
+    with open(raw_data_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            row_data = row[2:]
+            if csv_reader.line_num == 2:
+                data_matrix = np.asmatrix(row_data, float)
+            elif csv_reader.line_num > 2:
+                current_matrix = np.asmatrix(row_data, float)
+                data_matrix = np.concatenate((data_matrix, current_matrix), 0)
+        data_matrix = np.asarray(data_matrix)
+        n_row = data_matrix.shape[0]
+        n_col = data_matrix.shape[1]
+
+    raw_pd['run'] = n_col*['R1']
+
+    for i in range(n_row-1):
+        run = 'R' + str(i+2)
+        add_pd['run'] = n_col*[run]
+        raw_pd = raw_pd.append(add_pd,ignore_index=True)
+
+    flat_data = data_matrix.flatten()
+    raw_pd['performance'] = flat_data
+    raw_pd.to_csv(save_raw_pd)
+
+
+
+def plot_2by2():
+    df = pd.read_csv(mean_path)
+    cooc_space = df.loc[np.logical_and(df['encode'] == 'cooc', df['representation'] == 'space')]['mean']
+    cooc_graph = df.loc[np.logical_and(df['encode'] == 'cooc', df['representation'] == 'graph')]['mean']
+    sim_space = df.loc[np.logical_and(df['encode'] != 'cooc', df['representation'] == 'space')]['mean']
+    sim_graph = df.loc[np.logical_and(df['encode'] != 'cooc', df['representation'] == 'graph')]['mean']
+
+    cooc_mean = [round(cooc_space.mean(axis = 0),3), round(cooc_graph.mean(axis = 0),3)]
+    cooc_std = [round(cooc_space.std(axis=0),3), round(cooc_graph.std(axis=0),3)]
+    cooc_max = [round(cooc_space.max(axis=0),3), round(cooc_graph.max(axis=0),3)]
+
+    sim_mean = [round(sim_space.mean(axis=0),3), round(sim_graph.mean(axis=0),3)]
+    sim_std = [round(sim_space.std(axis=0),3), round(sim_graph.std(axis=0),3)]
+    sim_max = [round(sim_space.max(axis=0),3), round(sim_graph.max(axis=0),3)]
+
+    labels = ['Space','Graph']
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.25  # the width of the bars
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width / 2, cooc_mean, width, label='Co-occurrence', yerr = None)
+    rects2 = ax.bar(x + width / 2, sim_mean, width, label='Similarity', yerr = None)
+    for i in x:
+        ax.scatter([i - width/2, i + width/2], [cooc_max[i], sim_max[i]])
+    rect_set = [rects1, rects2]
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Mean Performance')
+    ax.set_title('Data Structure by Encoding Type')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+    for rects in rect_set:
+        for rect in rects:
+            height = rect.get_height()
+            ax.annotate('{}'.format(height),
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+    plt.tight_layout()
+    plt.savefig(save_path_2by2)
+
 
 # get parameters
 
@@ -109,7 +203,7 @@ def get_hd_matrix(parameter_dict, mean):
 
 def get_sorted(mean, std_error, models, n_row):
     plot_dict = {}
-    encode = ['cooc', 'cos', 'distance', 'corr', 'r_cos', 'r_distance', 'r_corr']
+    encode = ['distance','cos', 'corr','r_distance', 'r_cos', 'r_corr','cooc']
     for i in range(len(models)):
         model = 'M' + str(i+1)
         if mean[i] not in plot_dict:
@@ -137,7 +231,7 @@ def get_sorted(mean, std_error, models, n_row):
             exist_num = best_dict[model_encode][0]
             if model_num % 2 != exist_num % 2:
                 best_dict[model_encode].append(model_num)
-        print(i, rep_model, sorted_model_dict[rep_model], model_encode)
+        print(i, rep_model, sorted_model_dict[rep_model], model_encode, sorted_mean[i-1])
         i = i + 1
     print()
     for encode in best_dict:
@@ -167,21 +261,23 @@ def plot_performance(sorted_model, sorted_mean, sorted_se):
         colors = tuple(colors)
         fig, ax = plt.subplots()
         ax.bar(x_pos, plot_mean, yerr=plot_se, align='center', alpha=0.5, ecolor='black', color=colors)
-        ax.set_ylabel('Avg Syntagmatic Correlation')
+        ax.set_ylabel('Avg Syntagmatic Correlation', size = 20)
         ax.set_xticks(x_pos)
-        ax.set_xticklabels(plot_models)
+        ax.set_xticklabels(plot_models, size = 15)
         label = []
         for y in plot_mean:
             label.append(str(round(y, 3)))
         for k in x_pos:
-            if plot_mean[k] > 0:
-                ax.text(x=x_pos[k] - 0.4, y=plot_mean[k] + 0.02, s=label[k], size=10)
-            else:
-                ax.text(x=x_pos[k] - 0.4, y=plot_mean[k] - 0.03, s=label[k], size=10)
+            #if k % 3 == 0:
+                if plot_mean[k] > 0:
+                    ax.text(x=x_pos[k] - 0.35, y=plot_mean[k] + 0.015, s=label[k], size=15)
+                else:
+                    ax.text(x=x_pos[k] - 0.35, y=plot_mean[k] - 0.03, s=label[k], size=15)
 
         ax.set_title(str(i+1))
         ax.yaxis.grid(True)
-        fig.set_size_inches(20,5)
+        fig.set_size_inches(20,7)
+        plt.yticks(fontsize = 15)
         plt.tight_layout()
         plt.savefig(save_path1 + '/' + str(i+1) + '.png')
 
@@ -314,12 +410,16 @@ def plot_3way(mean_matrix, error_matrix, chosen_para, parameters, parameter_dict
     # plt.show()
 
 def plot_rep_violin(pandas_data, x, y, hue):
-    plt.figure(figsize = (12.5,5))
-    sns.violinplot(x = x, y = y, hue = hue, data = pandas_data, palette="Set2",
-                              split=True, scale="count", inner="stick", scale_hue=False)
-    plt.ylabel('Correlation score')
-    plt.title('interaction between ' + hue + ' and ' + x)
-    plt.savefig(save_path3 + '/' + hue + '_' + x )
+    plt.figure(figsize = (12.5,8))
+    sns.violinplot(x = y, y = x, hue = hue, data = pandas_data, palette="Set2",
+                              split=True, scale= 'count', inner="stick", scale_hue=False, bw=.1)
+    plt.xlabel('Correlation score', fontsize = 15)
+    plt.ylabel(x, color = 'w')
+    if x == 'encode':
+        plt.yticks([0,1,2,3,4,5,6],['distance','cosine','correlation','reduced-distance','reduced-cosine',
+                                    'reduced-correlation','co-occurrence'], fontsize = 12)
+    plt.legend(loc='upper left')
+    plt.savefig(save_path3 + '/' + hue + '_' + x, bbox_inches='tight')
 
 
 def plot_interaction(indices, parameter_dict, parameters, data_frame, n_way):
@@ -332,7 +432,7 @@ def plot_interaction(indices, parameter_dict, parameters, data_frame, n_way):
     else:
         sns.set(style="whitegrid")
         for para in parameters:
-            if para != 'representation':
+            if para == 'encode':
                 plot_rep_violin(data_frame, para, 'mean', 'representation')
 
 def best_model_relatedness():
@@ -343,16 +443,19 @@ def get_best_score():
 
 
 def main():
+    #plot_2by2()
     mean, std_error, models, n_row = get_performance(path)
     data_frame = get_dataframe(mean, std_error, model_path)
-    sorted_model, sorted_mean, sorted_se = get_sorted(mean, std_error, models, n_row)
+    #sorted_model, sorted_mean, sorted_se = get_sorted(mean, std_error, models, n_row)
     #plot_performance(sorted_model,sorted_mean,sorted_se)
     parameters, parameter_dict = get_parameter_dict(model_path)
     #hd_matrix = get_hd_matrix(parameter_dict, mean)
     indices3 = get_moment_index(len(parameters))[1][3]
     plot_interaction(indices3, parameter_dict, parameters, data_frame, 2)
 
-main()
+#main()
+
+get_raw_dataframe(model_path,path)
 
 
 
