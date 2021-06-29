@@ -11,6 +11,7 @@ from pathlib import Path
 
 plot_scatter = False
 save_path = str(Path().cwd().parent / 'Data' /'rank_difference')
+corr_flat = True
 
 def calculate_rank_matrix(matrix,version, combine=None, measure=None):
     # get the standard ranking based on linguistic corpus, and
@@ -84,10 +85,13 @@ def calculate_rank_matrix(matrix,version, combine=None, measure=None):
         occur_list = list(transpose[i])
         rank_matrix[i] = ss.rankdata(occur_list)
 
-    flat_ranking = rank_matrix.flatten()
+    if corr_flat:
+        return_ranking = rank_matrix.flatten()
+    else:
+        return_ranking = rank_matrix
     flat_relate = transpose.flatten()
 
-    return flat_ranking, flat_relate
+    return return_ranking, flat_relate
 
 def thematic_role_transfer(sr_matrix, kit):
     nouns = kit['nouns']
@@ -108,6 +112,7 @@ def thematic_role_transfer(sr_matrix, kit):
                 else: # when the noun has a agent role
                     id_verb_thematic = verbs.index(verb)
                 thematic_matrix[id_role_thematic][id_verb_thematic] = sr_matrix[id_role_sr][id_verb_sr]
+
     return thematic_matrix
 
 
@@ -123,19 +128,17 @@ def get_task_matrix(kit, encode, rep, dg):
     else:
         grand_matrix = kit['sim_matrix']
 
+
     if rep == 'space':
         for phrase in pairs:
             id_noun = nouns.index(phrase[1])
             id_verb = verbs.index(phrase[0])
             id_noun_grand = vocab_index_dict[phrase[1]]
             id_verb_grand = vocab_index_dict[phrase[0]]
-            task_matrix[id_noun][id_verb] = grand_matrix[id_noun_grand][id_verb_grand]
+            task_matrix[id_noun][id_verb] = grand_matrix[id_verb_grand][id_noun_grand]
     else:
         task_matrix = graphical_analysis.get_sr_matrix(grand_matrix, nouns, verbs, vocab_list, dg)
-    #print(verbs)
-    #print(nouns)
-    #print(task_matrix)
-    #print()
+
     return task_matrix
 
 def get_standard_ranking(kit, combine, measure):
@@ -173,15 +176,16 @@ def get_standard_ranking(kit, combine, measure):
 
 def trivial_ranking(ranking):
     # telling if the ranking is trivial(all ranks are the same)
-    length = np.shape(ranking)[0]
+    flat_ranking = ranking.flatten()
+    length = np.shape(flat_ranking)[0]
     triviality = True
     for i in range(length):
-        if ranking[i] != ranking[0]:
+        if flat_ranking[i] != flat_ranking[0]:
             triviality = False
             break
     return triviality
 
-def plot_model_corpus(corpus_re, model_re, corpus_rank, model_rank, model_num, verbs):
+def get_sorted_verb(model_re, corpus_rank, model_rank, verbs):
     flat_model_rank = model_rank.flatten()
     flat_corpus_rank = corpus_rank.flatten()
     rank_difference = abs(flat_model_rank - flat_corpus_rank)
@@ -191,52 +195,55 @@ def plot_model_corpus(corpus_re, model_re, corpus_rank, model_rank, model_num, v
     for i in range(num_verb):
         verb_rank_a = rank_difference[i*num_noun: i*num_noun+num_noun]
         diff_a = verb_rank_a.sum()/num_noun
-        verb_role = verbs[i] + '_a'
-        verb_dict[verb_role] = diff_a
+        verb_role_a = verbs[i] + '_a'
+        verb_dict[verb_role_a] = diff_a
         verb_rank_p = rank_difference[(i + num_verb) * num_noun: (i + num_verb) * num_noun + num_noun]
         diff_p = verb_rank_p.sum()/num_noun
-        verb_role = verbs[i] + '_p'
-        verb_dict[verb_role] = diff_p
-
-
+        verb_role_p = verbs[i] + '_p'
+        verb_dict[verb_role_p] = diff_p
 
 
 
     sorted_verb = sorted(verb_dict.items(), key=lambda x:x[1])
+
+    return sorted_verb, flat_model_rank, flat_corpus_rank
+
+def plot_model_corpus(sorted_verb, model_num, flat_model_rank, flat_corpus_rank, model_corr):
     sorted_diff = []
     sorted_roles = []
 
 
-    for item in sorted_verb[-10:]:
+    for item in sorted_verb:
         sorted_diff.append(item[1])
         sorted_roles.append(item[0])
     y_verb = np.arange(len(sorted_roles))
 
-    fig, ax = plt.subplots(1,2,figsize=(9,3))
+    fig, ax = plt.subplots(1,2,figsize=(9,9))
+    fig.suptitle(model_num + ': ' + str(round(model_corr,3)))
 
-    if model_num == 'M2':
-        fig.suptitle('best graph')
-    elif model_num == 'M7':
-        fig.suptitle('best space')
+    if int(model_num[1:]) % 2 == 0:
+        color = 'blue'
     else:
-        fig.suptitle(model_num)
-
-
+        color = 'red'
+    colors = []
+    for i in y_verb:
+        colors.append(color)
     ax[0].set_title('scattered ranks')
     ax[0].scatter(flat_corpus_rank, flat_model_rank)
 
     ax[1].set_title('rank difference by verbs')
-    ax[1].barh(y_verb, sorted_diff)
+    ax[1].barh(y_verb, sorted_diff, color = colors)
     ax[1].set_yticks(y_verb)
     ax[1].set_yticklabels(sorted_roles)
     ax[1].set_xlim(0,10)
 
     plt.tight_layout()
+    #plt.show()
 
-    if model_num == 'M2':
-        plt.savefig(save_path + '/' + 'best_graph.png')
-    elif model_num == 'M7':
-        plt.savefig(save_path + '/' + 'best_space.png')
+
+    plt.savefig(save_path + '/' + str(model_num) + '.png')
+
+
 
 def run_task(kit, encode, rep, dg):
     # get model ranking from the sr_matrix carried out by the model
@@ -245,36 +252,56 @@ def run_task(kit, encode, rep, dg):
     sr_matrix = get_task_matrix(kit, encode, rep, dg)
     thematic_matrix = thematic_role_transfer(sr_matrix, kit)
     model_ranking, model_relate = calculate_rank_matrix(thematic_matrix, 'non')
+
+    if len(model_ranking.shape) == 2:
+        (n_row, n_col) = model_ranking.shape
+    else:
+        n_row = 1
+        n_col = model_ranking.shape[0]
+
     model_num = kit['model_num']
     verbs = kit['verbs']
-    if model_num == 'M2' or model_num == 'M7':
-        print(model_ranking)
-        print()
-    #print(thematic_matrix)
-    #print()
+
 
     measures = ['cos']
     combines = ['separate']
     standard_rankings = []
     model_corr_dict = {}
-    triviality = trivial_ranking(model_ranking)
+
 
     for measure in measures:
         for combine in combines:
-            #print(measure, combine)
             standard_ranking, standard_thematic = get_standard_ranking(kit,combine, measure)
-            standard_rankings.append(standard_ranking)
-            if model_num == 'M2':
-                print('standard')
-                print(standard_ranking)
-                print()
-            if triviality:
-                model_corr = 0
+            output_standard = model_ranking.reshape(n_row * n_col, 1)
+            standard_rankings.append(output_standard)
+            corr_sum = 0
+            if corr_flat:
+                triviality = trivial_ranking(model_ranking)
+                if triviality:
+                    model_corr = 0
+                else:
+                    model_corr = np.corrcoef(model_ranking, standard_ranking)[0][1]
             else:
-                model_corr = np.corrcoef(model_ranking, standard_ranking)[0][1]
+                for i in range(n_row):
+                    triviality_model = trivial_ranking(model_ranking[i])
+                    trivial_standard = trivial_ranking(standard_ranking[i])
+                    if triviality_model:
+                        if trivial_standard:
+                            verb_corr = 1
+                        else:
+                            verb_corr = 0
+                    else:
+                        if trivial_standard:
+                            verb_corr = 0
+                        else:
+                            verb_corr = np.corrcoef(model_ranking[i], standard_ranking[i])[0][1]
+                    corr_sum = corr_sum + verb_corr
+                model_corr = corr_sum/n_row
             if plot_scatter:
-                plot_model_corpus(standard_thematic,thematic_matrix, standard_ranking, model_ranking,
-                                  model_num, verbs)
+                sorted_verb, flat_model_rank, flat_corpus_rank = get_sorted_verb(thematic_matrix,standard_ranking,
+                                                                                model_ranking,verbs)
+                if model_corr > 0.76:
+                    plot_model_corpus(sorted_verb,model_num,flat_model_rank,flat_corpus_rank, model_corr)
             model_corr_dict[measure + '_' + combine] = model_corr
 
 
@@ -282,9 +309,9 @@ def run_task(kit, encode, rep, dg):
     #    print(ranking)
     #    print()
 
-    output_ranking = model_ranking.reshape(len(model_ranking),1)
-    output_relate = model_relate.reshape(len(model_relate),1)
-    return model_corr_dict, output_ranking, output_relate
+    output_ranking = model_ranking.reshape(n_row * n_col,1)
+    output_relate = model_relate.reshape(n_row * n_col ,1)
+    return model_corr_dict, output_ranking, output_relate, standard_rankings
 
 
 
