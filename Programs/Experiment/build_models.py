@@ -1,4 +1,4 @@
-from Programs.Spatial_Models import cooc_matrix, spacial_analysis
+from Programs.Spatial_Models import cooc_matrix, spatial_analysis
 
 ########################################################################################################################
 # In Humans, corpora generated are lists of sentences, to feed the linear models, need to first transform the sentences
@@ -53,9 +53,9 @@ def build_model(word_bag, vocab_list, vocab_index_dict, model_parameters):
     grand_matrix = cooc_matrix.get_cooc_matrix(vocab_list, vocab_index_dict, word_bag, encoding, normalization,
                                                    reduction, boundary)
     if reduction == 'non':
-        sim_matrix = spacial_analysis.get_sr_matrix(grand_matrix, vocab_list, vocab_list, vocab_index_dict, sim_type)
+        sim_matrix = spatial_analysis.get_sr_matrix(grand_matrix, vocab_list, vocab_list, vocab_index_dict, sim_type)
     else:
-        sim_matrix = spacial_analysis.get_sr_matrix(grand_matrix[0], vocab_list, vocab_list, vocab_index_dict, sim_type)
+        sim_matrix = spatial_analysis.get_sr_matrix(grand_matrix[0], vocab_list, vocab_list, vocab_index_dict, sim_type)
     return grand_matrix, sim_matrix
 
 

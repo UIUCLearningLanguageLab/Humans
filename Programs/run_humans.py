@@ -1,5 +1,5 @@
 from Programs.World import world, config
-from Programs.Spatial_Models import spacial_analysis, sim_space_analysis
+from Programs.Spatial_Models import spatial_analysis, sim_space_analysis
 from Programs.Graphical_Models import STN, synHAL_analysis, graphical_analysis
 from Programs.Experiment import paradigmatic_task as p_task
 from Programs.Experiment import syntagmatic_task as s_task
