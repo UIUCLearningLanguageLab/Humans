@@ -75,6 +75,8 @@ class Agent:
         self.noun_stems = [] # noun wthout thematic roles
         self.noun_dict = {} # dictionary for noun stems and their roles
 
+
+    # decide whether or not the currenct event has been completed
     def compute_status(self):
         t = self.event_tree
         current_dict = self.event_dict
@@ -92,6 +94,8 @@ class Agent:
                     self.event_dict[self.current_event][1] = 0
                     break
 
+
+    # decide where to go for the next step in the event structure tree
     def choose_heir(self):
         t = self.event_tree
         event_type = self.event_dict[self.current_event][0]

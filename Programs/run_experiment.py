@@ -7,7 +7,7 @@ from Programs.Experiment import generate_world, build_models, paradigmatic_task 
 # Experiment type:
 # test world only for world generation
 # s_task for conducting syntagmatic tasks
-# p_task for conducting paradigmatic tasks
+# p_task for conducting paradigmatic tasks (not investigated in the current project)
 
 num_run = 10
 test_world = True
@@ -46,6 +46,8 @@ def get_data_space():
     hd_matrix = np.zeros(matrix_shape)
     return hd_matrix
 
+
+# plot svd variances, to decide how many dimensions to keep for the word vectors
 def plot_svd(cooc_var_list, path, run):
     size = len(cooc_var_list[0])
     num_row = int(len(cooc_var_list)/2)
@@ -120,6 +122,7 @@ def run_experiment(num_run):
         print('world ' + str(i))
         print()
         hd_matrix = get_data_space()
+
         # create a world and get world info
         the_world = generate_world.running_world()
         if test_world:
@@ -130,9 +133,11 @@ def run_experiment(num_run):
         kit = profile['kit']
         noun_stems = kit['noun_stems']
         cooc_var_list = []
+
         # p_task:
         for j in range(4):
             wb_dict['world'].append(i+1)
+
         # s_task:
         verbs = kit['verbs']
         corr_dict['world'].append(i+1)

@@ -5,11 +5,14 @@ from Programs.World import config
 class Plant_resource:
 
     ####################################################################################################################
-    # define animal class
-    # animal object has category, size and an randomized initial location
-    # speed is a constant rate that the animal moves
-    # vision is a range that within which the animal detect a human's presence
-    # For current experiment designs, deer and rabbit are the only two categories of animals may be generated
+    # define plant_resource class, now including 3 subclasses: Plant (eaten by herbivores); Nut and Fruit (eaten by
+    # human)
+
+    # A plant is an object, that produce plant resource. The resource can be collected, and the object never die. The
+    # plant grows so that resources are accumulated, and once collected/consumed by agents, the amount of the resource
+    # decrease, yet it recovers, as time pass by.
+
+    # all plant item has a 'size', it stops growing once the size is reached
     ####################################################################################################################
 
     def __init__(self, world):
