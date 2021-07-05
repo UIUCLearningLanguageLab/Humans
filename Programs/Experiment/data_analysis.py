@@ -61,6 +61,7 @@ def get_dataframe(mean, std_error, dict_path):
     return mean_pd
 
 # store raw data in the parameterized dataframe
+
 def get_raw_dataframe(dict_path, raw_data_path):
     raw_pd = pd.read_csv(dict_path)
     add_pd = pd.read_csv(dict_path)
@@ -140,7 +141,8 @@ def plot_2by2():
     plt.savefig(save_path_2by2)
 
 
-# get parameters
+# get parameters and build the parameter dictionary (for model variations, so that can check the parameter values of
+# each model variation
 
 def get_parameter_dict(dict_path):
     parameter_dict = {}
@@ -173,7 +175,7 @@ def get_hd_index(num, carry):
 
 
 
-# store performance data in high dimensional matrix
+# store performance data in high dimensional matrix (not necessary)
 
 def get_hd_matrix(parameter_dict, mean):
     matrix_shape = []
@@ -200,6 +202,8 @@ def get_hd_matrix(parameter_dict, mean):
 
     return hd_matrix
 
+
+# sort the model variations by their mean performances, some model variations may have identical performances
 
 def get_sorted(mean, std_error, models, n_row):
     plot_dict = {}
@@ -238,6 +242,8 @@ def get_sorted(mean, std_error, models, n_row):
         print(encode, best_dict[encode], mean[best_dict[encode][0]-1],mean[best_dict[encode][1]-1])
     return sorted_model, sorted_mean, sorted_se
 
+
+# make barplot of the model performances
 
 def plot_performance(sorted_model, sorted_mean, sorted_se):
     num_model = len(sorted_mean)
@@ -348,9 +354,10 @@ def dim_collapse(hd_matrix, parameter_dict, parameters, interact_dim):
     plot_3way(dim_max, np.zeros(collapse_shape), interact_dim, parameters, parameter_dict, 'max')
 
 
+# given the 3 dimension matrix, plot bar graph to show three way interaction in the parameter space
+
 def plot_3way(mean_matrix, error_matrix, chosen_para, parameters, parameter_dict, type):
     y_lim = 1.5 * np.amax(mean_matrix)
-    # given the 3 dimension matrix, plot bar graph to show three way interaction in the parameter space
     chosen_id = []
     for variable in chosen_para:
         chosen_id.append(parameters.index(variable))
@@ -408,6 +415,9 @@ def plot_3way(mean_matrix, error_matrix, chosen_para, parameters, parameter_dict
     fig.suptitle(type + ' in subspace ' + str(chosen_para))
     plt.savefig(save_path2 + '/' + type + '/' + chosen_para[0]+'_'+chosen_para[1]+'_'+chosen_para[2] + '.png')
     # plt.show()
+
+
+# make violin plot to show distribution of 2X7 conditions
 
 def plot_rep_violin(pandas_data, x, y, hue):
     plt.figure(figsize = (12.5,8))

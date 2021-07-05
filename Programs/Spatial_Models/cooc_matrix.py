@@ -98,7 +98,7 @@ def get_ppmi_matrix(ww_matrix):  # get ppmi martix from co-occurrence matrix
 
     return ppmi_matrix, pmi_matrix
 
-def get_log_row(ww_matrix):  # get ppmi martix from co-occurrence matrix
+def get_log_row(ww_matrix):  # get the matrix row_logged
     size = ww_matrix.shape
     log_matrix = np.zeros(size)
     normalized_matrix = np.zeros(size)
@@ -115,6 +115,8 @@ def get_log_row(ww_matrix):  # get ppmi martix from co-occurrence matrix
 
     return normalized_matrix
 
+
+# get the cooc_matrix, due to the parameter setting
 
 def get_cooc_matrix(vocab_list, vocab_index_dict, word_bag, encoding, normalization, reduction, boundary):
     cooc_matrix = create_cooc_matrix(vocab_list, vocab_index_dict, word_bag, encoding, boundary)

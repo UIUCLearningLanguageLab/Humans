@@ -9,8 +9,8 @@ period = True
 
 ########################################################################################################################
 # spatial model analysis:
-# computing semantic relatedness scores of the spatial models(similarity based), where scores are the similarities of
-# spatial word embeddings
+# compute semantic relatedness scores of the spatial models(similarity based), where scores are the similarities between
+# word embeddings (co-occurrence row vectors)
 ########################################################################################################################
 
 def trivial_ranking(ranking):
@@ -24,6 +24,10 @@ def trivial_ranking(ranking):
             break
     return triviality
 
+
+# need to make sure the matrix can be transformed to a connected graph (otherwise can not run activation spreading)
+# basically, replace the zeroes in the matrix by a very small number, so, that the disconnected items are very weakly
+# connected to other items
 def get_matrix_connected(matrix, coeff):
     n_row = np.shape(matrix)[0]
     n_col = np.shape(matrix)[1]
@@ -39,6 +43,8 @@ def get_matrix_connected(matrix, coeff):
                 matrix[i][j] = min_num/coeff
     return matrix
 
+
+# compute the similarity score between two word vectors
 
 def get_sim(matrix,source,target, vocab_index_dict, sim_type):
     #print(vocab_index_dict)
@@ -75,6 +81,8 @@ def get_sim(matrix,source,target, vocab_index_dict, sim_type):
     #print(sim_type,sim)
     return sim
 
+
+# get the semantic relatedness matrix
 
 def get_sr_matrix(matrix, word_list1, word_list2, vocab_index_dict, sim_type):
     sr_matrix = np.zeros((len(word_list1), len(word_list2)))

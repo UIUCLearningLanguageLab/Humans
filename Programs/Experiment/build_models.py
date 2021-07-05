@@ -3,9 +3,13 @@ from Programs.Spatial_Models import cooc_matrix, spacial_analysis
 ########################################################################################################################
 # In Humans, corpora generated are lists of sentences, to feed the linear models, need to first transform the sentences
 # into word tokens
-# list of sentence into list of words, for spatial models
+# list of sentences into list of words, for spatial models
 ########################################################################################################################
 
+
+########################################################################################################################
+# transform list of sentences into list of words (if no boundary), keep or remove period, get vocabulary of the corpus
+########################################################################################################################
 
 def corpus_transformation(linear_corpus, period, boundary):
     word_bag = []
@@ -25,6 +29,10 @@ def corpus_transformation(linear_corpus, period, boundary):
         if boundary:
             word_bag.append(sent)
     return word_bag, vocab_list, vocab_index_dict
+
+########################################################################################################################
+# get the co-occurrence/similarity matrix for each model variation
+########################################################################################################################
 
 def build_model(word_bag, vocab_list, vocab_index_dict, model_parameters):
     encoding = {}

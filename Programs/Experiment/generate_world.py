@@ -16,6 +16,8 @@ def running_world():  # running the world and get the corpus
 
     for i in range(config.World.num_turn):
         the_world.next_turn()
+
+    # count how many times agent eat certain food
     for agent in the_world.agent_list:
         the_world.eat_count_nut += agent.eat_count_nut
         the_world.eat_count_fruit += agent.eat_count_fruit
@@ -24,9 +26,13 @@ def running_world():  # running the world and get the corpus
         the_world.sleep_count += agent.sleep_count
         the_world.idle_count += agent.idle_count
         the_world.drink_count += agent.drink_count
+
     # the_display = display.Display(the_world)
     # the_display.root.mainloop()
+
+    # count how many herbivores have been consumed
     num_consumed_herbivore = config.World.num_herbivores * len(the_world.herbivore_category) - len(the_world.herbivore_list)
+
     sorted_t_p_pairs = sorted(the_world.t_p_pairs.items(),key=lambda x:x[1], reverse=True)
     sorted_v_a_pairs = sorted(the_world.v_a_pairs.items(), key=lambda x: x[1], reverse=True)
     for pair in the_world.v_a_pairs:
@@ -79,6 +85,9 @@ def running_world():  # running the world and get the corpus
             print(pairs)
     return the_world
 
+
+# syntagmatic rules for whether or not a noun can be the agent or patient of an event (verb)
+
 def get_syntagmatic_rule():
     syntagmatic_rule = {}
     verb_indices = {}
@@ -104,12 +113,12 @@ def get_syntagmatic_rule():
 
 
 def get_world_info(the_world):
-    # there could be multiple humans in the world, in the current model, there is only one
+    # there can be multiple humans in the world, in the current model, there is only one
     profiles = []  # a record of information with respect to individuals: individuals are keys, and values are the
     # experiment-relevant information regarding the individuals
 
-    profile = {}  # currently a paradigmatic and a syntagmatic task are carried out, need to pass the input to the
-    # task.
+    profile = {}  # currently a paradigmatic and a syntagmatic task are carried out,  pass the input to the
+    # task, with respective to each individual
     output_info = {}
     kit = {} # a kit is the package of data in order to carrying out the tasks: including the
     # corpus, the verbs and nouns, and the verb-noun pairs and so on
@@ -143,16 +152,16 @@ def get_world_info(the_world):
 
     #print(p_nouns)
     #print(t_verbs)
-    kit['p_nouns'] = p_nouns
-    kit['t_verbs'] = t_verbs
-    kit['nouns'] = nouns
-    kit['agent'] = agent
-    kit['verbs'] = verbs
-    kit['v_a_pairs'] = v_a_pairs
-    kit['t_p_pairs'] = t_p_pairs
-    kit['pairs'] = pairs
+    kit['p_nouns'] = p_nouns # patient nouns
+    kit['t_verbs'] = t_verbs # transitive verbs
+    kit['nouns'] = nouns # all nouns
+    kit['agent'] = agent # all agents
+    kit['verbs'] = verbs # all verbs
+    kit['v_a_pairs'] = v_a_pairs # occurred verb-agent pairs
+    kit['t_p_pairs'] = t_p_pairs # occurred transitive-patient pairs
+    kit['pairs'] = pairs # all occurred pairs
     kit['flat_item'] = flat_item
-    kit['the_world'] = the_world
+    kit['the_world'] = the_world # world information
     kit['noun_dict'] = noun_dict
     kit['noun_stems'] = noun_stems
     kit['rules'] = rules

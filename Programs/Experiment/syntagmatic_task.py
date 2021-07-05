@@ -93,6 +93,7 @@ def calculate_rank_matrix(matrix,version, combine=None, measure=None):
 
     return return_ranking, flat_relate
 
+# transform a semantic relatedness matrix into the thematic-role form
 def thematic_role_transfer(sr_matrix, kit):
     nouns = kit['nouns']
     verbs = kit['verbs']
@@ -116,6 +117,7 @@ def thematic_role_transfer(sr_matrix, kit):
     return thematic_matrix
 
 
+# get the correct semantic relatedness matrix by the model parameter
 def get_task_matrix(kit, encode, rep, dg):
     nouns = kit['nouns']
     verbs = kit['verbs']
@@ -185,6 +187,8 @@ def trivial_ranking(ranking):
             break
     return triviality
 
+
+# calculate the rank difference (between the standard and the model prediction) by verb
 def get_sorted_verb(model_re, corpus_rank, model_rank, verbs):
     flat_model_rank = model_rank.flatten()
     flat_corpus_rank = corpus_rank.flatten()
@@ -202,16 +206,15 @@ def get_sorted_verb(model_re, corpus_rank, model_rank, verbs):
         verb_role_p = verbs[i] + '_p'
         verb_dict[verb_role_p] = diff_p
 
-
-
     sorted_verb = sorted(verb_dict.items(), key=lambda x:x[1])
-
     return sorted_verb, flat_model_rank, flat_corpus_rank
+
+
+# make the plot for rank difference
 
 def plot_model_corpus(sorted_verb, model_num, flat_model_rank, flat_corpus_rank, model_corr):
     sorted_diff = []
     sorted_roles = []
-
 
     for item in sorted_verb:
         sorted_diff.append(item[1])
