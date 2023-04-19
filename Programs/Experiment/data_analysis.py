@@ -579,7 +579,7 @@ def main():
     #hd_matrix = get_hd_matrix(parameter_dict, mean)
     #indices3 = get_moment_index(len(parameters))[1][3]
     #plot_interaction(indices3, parameter_dict, parameters, data_frame, 2, save_path3, 'mean')
-    plot_interaction(indices3, parameter_dict, parameters, data_frame, 2, save_path3, 'std_error')
+    #plot_interaction(indices3, parameter_dict, parameters, data_frame, 2, save_path3, 'std_error')
 
 
     #rank_df = get_dataframe(rank_mean, rank_std, model_path)
