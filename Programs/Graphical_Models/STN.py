@@ -181,7 +181,7 @@ class Stn:
     #########################################################################################
 
     # create the networkx Digraph by joining the trees of the corpus.
-    # the return consits of the edge set, the node set, and also the networkx graphical object of the network.
+    # the return consists of the edge set, the node set, and also the networkx graphical object of the network.
 
     def get_network(self):
         network_edge = []

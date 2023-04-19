@@ -37,7 +37,7 @@ class Human:
         self.food_threshold = None
         self.carry_threshold = None
         self.sleep_threshold = 1
-        self.hunger_threshold = 1
+        self.hunger_threshold = 2
         self.thirst_threshold = 0.3
 
         # count how many times a human has acted fullfilling each drive
@@ -79,6 +79,7 @@ class Human:
         self.destination = None # where to go
         self.food_target = self.get_target() # get the food target
         self.hunting_method = self.get_hunting_method()  # get the hunting method, which is a distribution over the
+        #print(self.hunting_method)
         # methods can be used for hunting
         self.state_change = self.get_state_change()  # get the change of drive levels for all actions.
         self.drive = ['hunger', 'sleepiness', 'thirst']
@@ -125,7 +126,7 @@ class Human:
 
     def get_target(self):
         target_list = []
-        for herbivore in self.world.herbivore_list:
+        for herbivore in self.world.food_herbivore_list:
             if herbivore not in self.world.searched_list:
                 target_list.append(herbivore)
         for nut in self.world.nut_list:
@@ -221,7 +222,7 @@ class Human:
                 elif event_name == 'going_to':
                     self.going_to()
                 elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping',
-                                    'waking_up', 'getting_up','drinking','resting','peeling','cracking'}:
+                                    'waking_up','yawning','stretching','getting_up','drinking','resting','peeling','cracking'}:
                     self.do_it(event_name)
                 else:
                     self.hunt(event_name)
@@ -612,10 +613,10 @@ class Human:
         hunting_skill = self.get_hunting_skill()[0]
         index = self.world.herbivore_category.index(self.focus.category)
         success_rate = hunting_skill[event_name][index]
-        num = np.random.choice(2, 1, p=[1-success_rate, success_rate])
+        num = np.random.choice(2, 1, p=[1-success_rate, success_rate])[0]
         if num == 1:
             self.event_dict[self.current_event][1] = 0
-            exception = {'chasing','trapping'}
+            exception = {'chasing','trapping','catching'}
             if event_name not in exception:
                 if self.focus in self.world.herbivore_list:
                     self.world.herbivore_list.remove(self.focus)

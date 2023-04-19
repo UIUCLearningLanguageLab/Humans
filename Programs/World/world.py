@@ -48,6 +48,8 @@ class World:
         self.animal_size = {'rabbit':(3,5), 'squirrel':(1,2), 'fox':(9,19), 'mouflon':(50,100),
                             'boar':(88,110), 'ibex':(80,150), 'bison':(1800,2200), 'buffalo': (1300,2600),
                                 'auroch':(1000,2000), 'tiger':(400,600),'wolf':(70,100),'hyena':(90,120)}
+        self.food_herbivore_list = []
+        self.acting_herbivore_list = []
         self.herbivore_list = []
         self.carnivore_list = []
 
@@ -114,6 +116,7 @@ class World:
         self.carnivore_eat = 0
         self.herbivore_eat = 0
         self.human_eat = 0
+        self.hunt_success = 0
 
         ################################################################################################################
         # entity taxonomy
@@ -142,6 +145,7 @@ class World:
         self.agent = [] # agents
         self.v_a_pairs = {} # verb_agent pairs
         self.pairs = {} # all pairs
+        self.collapsed_pairs = {} # all verb-noun pairs regardless of roles
         self.noun_stems = [] # noun wthout thematic roles
         self.noun_dict = {} # dictionary for noun stems and their roles
 
@@ -157,12 +161,19 @@ class World:
             self.agent_list.append(a_human)
 
 
-    def create_herbivores(self):
+    def create_food_herbivores(self):
         for herbivore in self.herbivore_category[:6]:
-            for i in range(config.World.num_herbivores):
-                a_herbivore = animal.Herbivore(self,herbivore)
-                self.herbivore_list.append(a_herbivore)
-                self.agent_list.append(a_herbivore)
+            a_herbivore = animal.Herbivore(self,herbivore)
+            self.food_herbivore_list.append(a_herbivore)
+            self.herbivore_list.append(a_herbivore)
+
+
+    def create_acting_herbivores(self):
+        for herbivore in self.herbivore_category[:6]:
+            a_herbivore = animal.Herbivore(self,herbivore)
+            self.acting_herbivore_list.append(a_herbivore)
+            self.herbivore_list.append(a_herbivore)
+            self.agent_list.append(a_herbivore)
 
     def create_carnivores(self):
         for carnivore in self.carnivore_category[:2]:
@@ -197,7 +208,7 @@ class World:
         for carnivore in self.carnivore_list:
             carnivore.take_turn()
 
-        for herbivore in self.herbivore_list:
+        for herbivore in self.acting_herbivore_list:
             herbivore.take_turn()
 
         for plant_r in self.plant_resource:

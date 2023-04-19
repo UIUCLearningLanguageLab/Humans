@@ -97,27 +97,22 @@ def get_adjacency_matrix(net):
     return W,length
 
 
-def activation_spreading_analysis(adjacency_matrix, source, target, node_list, dg):
+def get_distance(adjacency_matrix, source, target, node_list):
+    W = adjacency_matrix + np.transpose(adjacency_matrix)
+    G = nx.from_numpy_matrix(W)
+    source_index = node_list.index(source)
+    semantic_relatedness_dict = {}
+    for word in target:
+        target_index = node_list.index(word)
+        semantic_relatedness_dict[word] = 1/nx.shortest_path_length(G, source_index, target_index)
+    return  semantic_relatedness_dict
+
+def activation_spreading_analysis(adjacency_matrix, source, target, node_list, length):
     # Spreading activation to measure the functional distance from source to target
     # where source is one item, and target is a list(of items)
     # returns a sr_dictionary consisting of sr from the source to all targets
-    if dg == False:
-        W = adjacency_matrix + np.transpose(adjacency_matrix)
-    else:
-        W = adjacency_matrix
 
-    W = np.asmatrix(W)
-    length = W.shape[0]
-    W = lil_matrix(W)
 
-    if dg == False:
-        normalizer = W.sum(1)
-        for i in range(length):
-            for j in range(length):
-                if normalizer[i][0, 0] == 0:
-                    W[i, j] = 0
-                else:
-                    W[i, j] = W[i, j] / normalizer[i][0, 0]
     activation = np.zeros((1,length),float)
     fired = np.ones((1, length), float)
     activation[0, node_list.index(source)] = 1
@@ -125,11 +120,13 @@ def activation_spreading_analysis(adjacency_matrix, source, target, node_list, d
     activation_recorder = activation
 
     while fired.any():
-        activation = activation*W
+        activation = activation * adjacency_matrix
         activation_recorder = activation_recorder + np.multiply(fired, activation)
         for i in range(length):
             if fired[0,i] == 1 and activation[0,i] != 0:
                 fired[0,i] = 0
+
+
 
 
 
@@ -166,16 +163,45 @@ def get_activation_plot(net, activation_recorder, node_list):
         net.plot_lexical_network(color_list)
         plt.show()
 
-def get_sr_matrix(matrix, word_list1, word_list2, node_list, dg):
+def get_sr_matrix(adjacency_matrix, word_list1, word_list2, node_list, dg, g_distance):
     # word_list1 is for rows, and word_list2 for colums
     # in syntagmatic task, word_list1 are nouns, and word_list2 verbs
     # nouns are targets, while verbs are sources
     # return a matrix of semantic relatedness from sr_dictionaries
     sr_matrix = np.zeros((len(word_list1),len(word_list2)))
+
+    #print(adjacency_matrix)
+    if dg == False:
+        W = adjacency_matrix + np.transpose(adjacency_matrix)
+    else:
+        W = adjacency_matrix
+
+    # get rid of negative weights in graphs
+    if W.min() < 0:
+        W = (W + 1)/2
+
+    W = np.asmatrix(W)
+    length = W.shape[0]
+    W = lil_matrix(W)
+
+
+    if dg == False:
+        normalizer = W.sum(1)
+        for i in range(length):
+            for j in range(length):
+                if normalizer[i][0, 0] == 0:
+                    W[i, j] = 0
+                else:
+                    W[i, j] = W[i, j] / normalizer[i][0, 0]
+
     for source in word_list2:
-        sr_dict = activation_spreading_analysis(matrix, source, word_list1, node_list, dg)
+        if g_distance: # use graphical distance
+            sr_dict = get_distance(W, source, word_list1, node_list)
+        else:
+            sr_dict = activation_spreading_analysis(W, source, word_list1, node_list, length)
         for target in word_list1:
             id1 = word_list1.index(target)
             id2 = word_list2.index(source)
             sr_matrix[id1][id2] = sr_dict[target]
+
     return sr_matrix

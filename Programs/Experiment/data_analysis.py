@@ -1,3 +1,4 @@
+from Programs.World import config
 import csv
 from pathlib import Path
 import math
@@ -9,15 +10,19 @@ import pandas as pd
 plot_size = 20
 
 two_encode_types = True
+thematic = True # whether or not the data is generated with separate thematic roles
+num_run = 2
 
-path = Path().cwd().parent.parent / 'Data' / 'cos_separate_for_plot.csv'
+path = Path().cwd().parent.parent / 'Data' / 'direct_cos_non_thematic_spearman.csv'
 model_path = Path().cwd().parent.parent / 'Data' / 'model_dict.csv'
 mean_path = Path().cwd().parent.parent / 'Data' / 'mean_pd.csv'
+rank_path = Path().cwd().parent.parent / 'Data' / 'g_s_relatedness_cos_log_thematic_spearman.csv'
 
-save_path1 = str(Path().cwd().parent.parent / 'Data' / 's_performance')
+save_path1 = str(Path().cwd().parent.parent / 'Data' / 's_performance_thematic_spearman')
 save_path2 = str(Path().cwd().parent.parent / 'Data' / '3ways')
-save_path3 = str(Path().cwd().parent.parent / 'Data' / '2way_violin')
-save_path_pd =  str(Path().cwd().parent.parent / 'Data' / 'mean_pd.csv')
+save_path3 = str(Path().cwd().parent.parent / 'Data' / '2way_violin_thematic_spearman')
+save_pd_mean =  str(Path().cwd().parent.parent / 'Data' / 'mean_pd.csv')
+save_path_rank_corr = str(Path().cwd().parent.parent / 'Data' / '2way_violin_rank_corr')
 
 if two_encode_types:
     save_raw_pd = str(Path().cwd().parent.parent / 'Data' / 'raw_2by2.csv')
@@ -51,13 +56,92 @@ def get_performance(path):
         std_error = data_matrix.std(0)
     return mean, std_error, models, n_row
 
+# reorganize the ranking(relatedness) matrix by category (human, carnivore, fruit) instead of items (rabbit, flower)
+# across all experimental runs. Only the verbs shared by all runs are included.
+def get_ranking(r_path):
+    rank_df = pd.read_csv(r_path)
+
+    shared_verb = set({})
+    categories = set({})
+    for i in range(num_run):
+        run_df = rank_df[rank_df['world'] == i+1]
+        run_verbs = set(run_df['verb'])
+        run_categories = set(run_df['noun category'])
+        if i == 0:
+            shared_verb = shared_verb.union(run_verbs)
+            categories = categories.union(run_categories)
+        else:
+            shared_verb = shared_verb.intersection(run_verbs)
+            categories = categories.intersection(run_categories)
+    shared_verb = list(shared_verb)
+    categories = list(categories)
+    shared_verb.sort()
+    categories.sort()
+    n_row = num_run * len(shared_verb) * len(categories)
+    n_col = len(rank_df.columns) - 5
+    run_size = len(shared_verb) * len(categories)
+    print(run_size)
+    rank_matrix = np.zeros((n_row,n_col))
+    for i in range(num_run):
+        for j in range(len(shared_verb)):
+            verb = shared_verb[j]
+            for k in range(len(categories)):
+                id_row = i * len(shared_verb) * len(categories) + j * len(categories) + k
+                category = categories[k]
+
+                sub_df = rank_df[(rank_df['world']== i+1) & (rank_df['verb'] == verb) & (rank_df['noun category'] == category)]
+                sub_df = sub_df[sub_df.columns[5:]]
+
+                rank_matrix[id_row] = sub_df.to_numpy().mean(axis = 0)
+
+    return rank_matrix, run_size
+
+# caculate the correlations of each model across runs
+
+def get_rank_correlatons(rank_matrix, num_run, run_size):
+    n_row = int(num_run * (num_run - 1) / 2)
+    n_col = rank_matrix.shape[1]
+
+    corr_matrix = np.zeros((n_row,n_col))
+
+
+    for i in range(num_run - 1):
+        for j in range(i+1, num_run):
+            id_row = int((2*num_run-i-1)*i/2 + j - i - 1)
+            for k in range(n_col):
+                start_i = i * run_size
+                end_i = (i+1)*run_size
+                start_j = j * run_size
+                end_j = (j + 1) * run_size
+                corr_matrix[id_row][k] =  np.corrcoef(rank_matrix[start_i:end_i,k],
+                                                      rank_matrix[start_j:end_j,k])[0][1]
+
+
+    mean = corr_matrix.mean(0)
+    std_error = corr_matrix.std(0)
+
+
+    model_means = mean[1:]
+    model_stds = std_error[1:]
+
+    model_mean = mean[1:].mean()
+    model_std = mean[1:].std()
+
+    print('target')
+    print(mean[0],std_error[0])
+    print('model')
+    print(model_mean, model_std)
+
+    return model_means, model_stds
+
+
 # organize the data into a panda data frame
 
 def get_dataframe(mean, std_error, dict_path):
     mean_pd = pd.read_csv(dict_path)
     mean_pd['mean'] = mean
     mean_pd['std_error'] = std_error
-    mean_pd.to_csv(save_path_pd)
+    mean_pd.to_csv(save_pd_mean)
     return mean_pd
 
 # store raw data in the parameterized dataframe
@@ -92,6 +176,10 @@ def get_raw_dataframe(dict_path, raw_data_path):
         raw_pd = raw_pd.append(add_pd,ignore_index=True)
 
     flat_data = data_matrix.flatten()
+    for i in range(len(flat_data)):
+        if flat_data[i] > 0.9999:
+            flat_data[i] = 0.9999
+
     raw_pd['performance'] = flat_data
     raw_pd.to_csv(save_raw_pd)
 
@@ -205,11 +293,36 @@ def get_hd_matrix(parameter_dict, mean):
 
 # sort the model variations by their mean performances, some model variations may have identical performances
 
-def get_sorted(mean, std_error, models, n_row):
+def get_sorted(mean, std_error, models, n_row, rank_corr_mean, rank_corr_std):
     plot_dict = {}
     encode = ['distance','cos', 'corr','r_distance', 'r_cos', 'r_corr','cooc']
+    representation = ['space', 'graph']
+    best_dict = {}
     for i in range(len(models)):
         model = 'M' + str(i+1)
+        model_encode = encode[math.ceil(((i+1) % 14) / 2) - 1]
+        model_representation = representation[i%2]
+        if model_encode not in best_dict:
+            if model_representation == 'space':
+                best_dict[model_encode] = [i+1, 0]
+            else:
+                best_dict[model_encode] = [0, i+1]
+        else:
+            if model_representation == 'space':
+                if best_dict[model_encode][0] == 0:
+                    best_dict[model_encode][0] = i+1
+                else:
+                    current_best_space = best_dict[model_encode][0]
+                    if mean[i] > mean[current_best_space-1]:
+                        best_dict[model_encode][0] = i+1
+            else:
+                if best_dict[model_encode][1] == 0:
+                    best_dict[model_encode][1] = i + 1
+                else:
+                    current_best_graph = best_dict[model_encode][1]
+                    if mean[i] > mean[current_best_graph - 1]:
+                        best_dict[model_encode][1] = i + 1
+
         if mean[i] not in plot_dict:
             plot_dict[mean[i]] = [[model], std_error[i]]
         else:
@@ -225,20 +338,16 @@ def get_sorted(mean, std_error, models, n_row):
         sorted_se.append(plot_dict[key][1]/n_row)
 
     i = 1
-    best_dict = {}
     for rep_model in sorted_model_dict:
         model_num = int(rep_model[1:])
         model_encode = encode[math.ceil((model_num%14)/2)-1]
-        if model_encode not in best_dict:
-            best_dict[model_encode] = [model_num]
-        elif len(best_dict[model_encode]) < 2:
-            exist_num = best_dict[model_encode][0]
-            if model_num % 2 != exist_num % 2:
-                best_dict[model_encode].append(model_num)
-        print(i, rep_model, sorted_model_dict[rep_model], model_encode, sorted_mean[i-1])
+        print(i, rep_model, sorted_model_dict[rep_model], model_encode, sorted_mean[i-1],
+              (rank_corr_mean[i-1], rank_corr_std[i-1]))
         i = i + 1
+    print(best_dict)
     print()
     for encode in best_dict:
+
         print(encode, best_dict[encode], mean[best_dict[encode][0]-1],mean[best_dict[encode][1]-1])
     return sorted_model, sorted_mean, sorted_se
 
@@ -419,20 +528,25 @@ def plot_3way(mean_matrix, error_matrix, chosen_para, parameters, parameter_dict
 
 # make violin plot to show distribution of 2X7 conditions
 
-def plot_rep_violin(pandas_data, x, y, hue):
+def plot_rep_violin(pandas_data, x, y, hue, save_path):
     plt.figure(figsize = (12.5,8))
     sns.violinplot(x = y, y = x, hue = hue, data = pandas_data, palette="Set2",
                               split=True, scale= 'count', inner="stick", scale_hue=False, bw=.1)
-    plt.xlabel('Correlation score', fontsize = 15)
+    if y == 'mean':
+        plt.xlabel('X-Axis: Average Correlation', fontsize = 12)
+        plt.legend(loc='upper left')
+    else:
+        plt.xlabel('X-Axis: Standard Error', fontsize = 15)
+        plt.legend(loc='upper right')
     plt.ylabel(x, color = 'w')
     if x == 'encode':
         plt.yticks([0,1,2,3,4,5,6],['distance','cosine','correlation','reduced-distance','reduced-cosine',
                                     'reduced-correlation','co-occurrence'], fontsize = 12)
-    plt.legend(loc='upper left')
-    plt.savefig(save_path3 + '/' + hue + '_' + x, bbox_inches='tight')
+
+    plt.savefig(save_path + '/' + hue + '_' + x + '_' + y, bbox_inches='tight')
 
 
-def plot_interaction(indices, parameter_dict, parameters, data_frame, n_way):
+def plot_interaction(indices, parameter_dict, parameters, data_frame, n_way, save_path, x_name):
     if n_way == 3:
         for index in indices:
             chosen_para = []
@@ -443,7 +557,7 @@ def plot_interaction(indices, parameter_dict, parameters, data_frame, n_way):
         sns.set(style="whitegrid")
         for para in parameters:
             if para == 'encode':
-                plot_rep_violin(data_frame, para, 'mean', 'representation')
+                plot_rep_violin(data_frame, para, x_name, 'representation', save_path)
 
 def best_model_relatedness():
     pass
@@ -453,19 +567,30 @@ def get_best_score():
 
 
 def main():
-    #plot_2by2()
+    ranking_matrix, run_size = get_ranking(rank_path)
+    rank_mean, rank_std = get_rank_correlatons(ranking_matrix, num_run, run_size)
     mean, std_error, models, n_row = get_performance(path)
     data_frame = get_dataframe(mean, std_error, model_path)
-    #sorted_model, sorted_mean, sorted_se = get_sorted(mean, std_error, models, n_row)
+    sorted_model, sorted_mean, sorted_se = get_sorted(mean, std_error, models, n_row, rank_mean, rank_std)
+
+    #plot_2by2()
     #plot_performance(sorted_model,sorted_mean,sorted_se)
-    parameters, parameter_dict = get_parameter_dict(model_path)
+    #parameters, parameter_dict = get_parameter_dict(model_path)
     #hd_matrix = get_hd_matrix(parameter_dict, mean)
-    indices3 = get_moment_index(len(parameters))[1][3]
-    plot_interaction(indices3, parameter_dict, parameters, data_frame, 2)
+    #indices3 = get_moment_index(len(parameters))[1][3]
+    #plot_interaction(indices3, parameter_dict, parameters, data_frame, 2, save_path3, 'mean')
+    plot_interaction(indices3, parameter_dict, parameters, data_frame, 2, save_path3, 'std_error')
+
+
+    #rank_df = get_dataframe(rank_mean, rank_std, model_path)
+    #plot_interaction(indices3, parameter_dict, parameters, rank_df, 2, save_path_rank_corr, 'mean')
+
+
+
 
 #main()
 
-get_raw_dataframe(model_path,path)
+get_raw_dataframe(model_path, path) # get the 2 by 2 or 2 by 7 dataframe
 
 
 

@@ -11,7 +11,7 @@ from Programs.Spatial_Models import cooc_matrix, spatial_analysis
 # transform list of sentences into list of words (if no boundary), keep or remove period, get vocabulary of the corpus
 ########################################################################################################################
 
-def corpus_transformation(linear_corpus, period, boundary):
+def corpus_transformation(linear_corpus, period, boundary, allow_thematic):
     word_bag = []
     vocab_index_dict = {}
     vocab_list = []
@@ -19,15 +19,20 @@ def corpus_transformation(linear_corpus, period, boundary):
         sent = sentence.copy()
         if not period:
             sent.remove('.')
+        new_sent = []
         for word in sent:
-            if not boundary:
-                word_bag.append(word)
+            if not allow_thematic:
+                if '-' in word:
+                    word = word[:-2]
+            new_sent.append(word)
             if word not in vocab_index_dict:
                 l = len(vocab_list)
                 vocab_index_dict[word] = l
                 vocab_list.append(word)
         if boundary:
-            word_bag.append(sent)
+            word_bag.append(new_sent)
+        else:
+            word_bag.extend(new_sent)
     return word_bag, vocab_list, vocab_index_dict
 
 ########################################################################################################################

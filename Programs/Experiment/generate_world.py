@@ -2,7 +2,7 @@ from Programs.World import world, config
 import csv
 import numpy as np
 
-VERBOSE = False
+VERBOSE = True
 
 
 def running_world():  # running the world and get the corpus
@@ -10,12 +10,54 @@ def running_world():  # running the world and get the corpus
     the_world.create_fruit()
     the_world.create_nut()
     the_world.create_plant()
-    the_world.create_herbivores()
+    for i in range(config.World.num_food_herbivores):
+        the_world.create_food_herbivores()
+    the_world.create_acting_herbivores()
     the_world.create_humans()
     the_world.create_carnivores()
 
     for i in range(config.World.num_turn):
         the_world.next_turn()
+
+    # get evaluation similarity: whether carnivores are more similar to humans (on agent part)
+
+    animal_list = []
+    evaluate_dict = {}
+    for c in the_world.carnivore_list:
+        carnivore = c.category + '-a'
+        animal_list.append(carnivore)
+        evaluate_dict[carnivore] = []
+
+    for i in range(6): # get one of each herbivore types
+        herbivore = the_world.acting_herbivore_list[i].category + '-a'
+        animal_list.append(herbivore)
+        evaluate_dict[herbivore]=[]
+    human_list = []
+
+    for h in the_world.human_list:
+        human = h.name + '-a'
+        human_list.append(human)
+        evaluate_dict[human] = []
+
+    for agent in evaluate_dict:
+        for v in the_world.verb:
+            if (v, agent) in the_world.v_a_pairs:
+                evaluate_dict[agent].append(the_world.v_a_pairs[(v,agent)])
+            else:
+                evaluate_dict[agent].append(0)
+        evaluate_dict[agent] = np.asarray(evaluate_dict[agent])
+
+
+    for animal in animal_list: # animals are ordered by their types, first carnivores, and then different types of herbivores
+        v1 = evaluate_dict[animal]
+        sim = 0
+        for human in human_list:
+            v2 = evaluate_dict[human]
+            sim = sim + np.inner(v1,v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
+        sim = sim/len(human_list)
+        print(animal,sim)
+
+
 
     # count how many times agent eat certain food
     for agent in the_world.agent_list:
@@ -27,21 +69,35 @@ def running_world():  # running the world and get the corpus
         the_world.idle_count += agent.idle_count
         the_world.drink_count += agent.drink_count
 
+    for carnivore in the_world.carnivore_list:
+        the_world.hunt_success += carnivore.hunt_success
+
     # the_display = display.Display(the_world)
     # the_display.root.mainloop()
 
     # count how many herbivores have been consumed
-    num_consumed_herbivore = config.World.num_herbivores * len(the_world.herbivore_category) - len(the_world.herbivore_list)
+    num_consumed_herbivore = config.World.num_food_herbivores * len(the_world.herbivore_category) - len(the_world.herbivore_list)
 
     sorted_t_p_pairs = sorted(the_world.t_p_pairs.items(),key=lambda x:x[1], reverse=True)
     sorted_v_a_pairs = sorted(the_world.v_a_pairs.items(), key=lambda x: x[1], reverse=True)
     for pair in the_world.v_a_pairs:
         the_world.pairs[pair] = the_world.v_a_pairs[pair]
+
     for pair in the_world.t_p_pairs:
         if pair in the_world.pairs:
             the_world.pairs[pair] += the_world.t_p_pairs[pair]
         else:
             the_world.pairs[pair] = the_world.t_p_pairs[pair]
+
+    for pair in the_world.pairs:
+        collapsed_pair = (pair[0], pair[1][:-2])
+        if collapsed_pair in the_world.collapsed_pairs:
+            the_world.collapsed_pairs[collapsed_pair] += the_world.pairs[pair]
+        else:
+            the_world.collapsed_pairs[collapsed_pair] = the_world.pairs[pair]
+
+    sorted_collapsed_pairs = sorted(the_world.collapsed_pairs.items(), key=lambda x: x[1], reverse=True)
+
     length = len(the_world.corpus)
     num_token = 0
     for sent in the_world.linear_corpus:
@@ -53,20 +109,31 @@ def running_world():  # running the world and get the corpus
     l_agent = len(the_world.agent)
     l_p_noun = len(the_world.p_noun)
 
+    num_pairs = len(the_world.v_a_pairs) + len(the_world.t_p_pairs)
+    num_collapsed_pairs = len(the_world.collapsed_pairs)
+    num_possible_pairs = l_agent * l_verb + l_t_verb * l_p_noun
+    num_possible_collapsed = len(the_world.noun_stems) * l_verb
+
+    rate_pairs = round(100 * num_pairs/num_possible_pairs,1)
+    rate_collapsed_pairs = round(100 * num_collapsed_pairs/num_possible_pairs,1)
+
     print('{} sentences'.format(length))
     print('{} word tokens'.format(num_token))
+    print('{}, or {}% of possible pairs has actually occurred'.format(num_pairs, rate_pairs))
+    print('{}, or {}% of possible collapsed pairs has actually occurred'.format(num_collapsed_pairs,
+                                                                                rate_collapsed_pairs))
+
     if VERBOSE:
-        print('First 100 sentences')
+        #print('First 100 sentences')
+        #print()
+        #for sentence in the_world.linear_corpus[:100]:
+            #print(sentence)
         print()
-        for sentence in the_world.linear_corpus[:100]:
-            print(sentence)
-        print()
-        print('{} sentences'.format(length))
-        print('{} word tokens'.format(num_token))
         print('verbs: {}'.format(the_world.verb))
         print('transitive verbs: {}'.format(the_world.t_verb))
         print('agents: {}'.format(the_world.agent))
         print('patients: {}'.format(the_world.p_noun))
+        print('nouns:{}'.format(the_world.agent + the_world.p_noun))
         print('noun stems: {}'.format(the_world.noun_stems))
         print('noun dict: {}'.format(the_world.noun_dict))
         print('{} animals consumed.'.format(num_consumed_herbivore))
@@ -79,10 +146,14 @@ def running_world():  # running the world and get the corpus
         print('{} human eat'.format(the_world.human_eat))
         print('{} carnivore eat'.format(the_world.carnivore_eat))
         print('{} herbivore eat'.format(the_world.herbivore_eat))
-        for pairs in sorted_t_p_pairs:
-            print(pairs)
-        for pairs in sorted_v_a_pairs:
-            print(pairs)
+        print('{} carnivor hunting success'.format(the_world.hunt_success))
+        print('{} herbivores left'.format((len(the_world.acting_herbivore_list))))
+        for pair in sorted_t_p_pairs:
+            print(pair)
+        for pair in sorted_v_a_pairs:
+            print(pair)
+        #for pair in sorted_collapsed_pairs:
+            #print(pair)
     return the_world
 
 
@@ -134,8 +205,9 @@ def get_world_info(the_world):
     verbs = the_world.verb
     v_a_pairs = the_world.v_a_pairs
     t_p_pairs = the_world.t_p_pairs
-    nouns = list(set(agent).union(set(p_nouns)))
+    nouns = agent + p_nouns
     pairs = the_world.pairs
+    collapsed_pairs = the_world.collapsed_pairs
     noun_dict = the_world.noun_dict
     noun_stems = the_world.noun_stems
     noun_tax = the_world.noun_tax
@@ -159,7 +231,8 @@ def get_world_info(the_world):
     kit['verbs'] = verbs # all verbs
     kit['v_a_pairs'] = v_a_pairs # occurred verb-agent pairs
     kit['t_p_pairs'] = t_p_pairs # occurred transitive-patient pairs
-    kit['pairs'] = pairs # all occurred pairs
+    kit['pairs'] = pairs # all occurred pairs\
+    kit['collapsed_pairs'] = collapsed_pairs
     kit['flat_item'] = flat_item
     kit['the_world'] = the_world # world information
     kit['noun_dict'] = noun_dict

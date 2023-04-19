@@ -5,6 +5,7 @@ from cytoolz import itertoolz
 
 PAD = '*PAD*'
 VERBOSE = False
+SAVE = True
 period = True
 
 ########################################################################################################################
@@ -120,6 +121,7 @@ def get_log_row(ww_matrix):  # get the matrix row_logged
 
 def get_cooc_matrix(vocab_list, vocab_index_dict, word_bag, encoding, normalization, reduction, boundary):
     cooc_matrix = create_cooc_matrix(vocab_list, vocab_index_dict, word_bag, encoding, boundary)
+    #print(cooc_matrix)
     if normalization == 'ppmi':
         cooc_matrix = get_ppmi_matrix(cooc_matrix)[0]
     elif normalization == 'log':
@@ -127,7 +129,9 @@ def get_cooc_matrix(vocab_list, vocab_index_dict, word_bag, encoding, normalizat
     if reduction == 'svd':
         cooc_matrix, cooc_var = np.linalg.svd(cooc_matrix)[:2]
         r_cooc_matrix = cooc_matrix[:,:3]
+        #print(r_cooc_matrix)
         return r_cooc_matrix, cooc_var
     else:
+        #print(cooc_matrix)
         return cooc_matrix
 

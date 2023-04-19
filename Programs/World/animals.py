@@ -161,6 +161,7 @@ class Animal(Agent):
         self.idle_count = 0
         self.alive = True
         self.animal_type = None
+        self.bite_size = None
 
 
     ################################################################################################################
@@ -417,6 +418,7 @@ class Animal(Agent):
             if self.focus.category in self.world.plant_category:
                 self.eat_count_plant = self.eat_count_plant + 1
 
+
             if self.focus.remain_size >= self.hunger:
                 self.sleepiness = self.sleepiness + self.sleepy_rate * self.hunger
                 self.focus.remain_size = self.focus.remain_size - self.hunger
@@ -426,6 +428,8 @@ class Animal(Agent):
                 self.hunger = self.hunger - self.focus.remain_size
                 self.focus.remain_size = 0
             self.event_dict[self.current_event][1] = 0
+
+
 
         elif event_name == 'sleeping':  # sleep completed immediately
             self.sleep_count = self.sleep_count + 1
@@ -457,19 +461,21 @@ class Carnivore(Animal):
         Animal.__init__(self, world, category)
         self.id_number = len(self.world.carnivore_list)
         self.animal_type = 'carnivore'
+        self.hunt_success = 0
 
 
         self.hunger = random.uniform(0.5,0.7)
         self.sleepiness = random.uniform(0,0.5)
         self.thirst = random.uniform(0.7,1)
 
-        self.sleep_threshold = 1
-        self.hunger_threshold = 100
-        self.thirst_threshold = 0.3
+        self.sleep_threshold = 1.5
+        self.hunger_threshold = 7
+        self.thirst_threshold = 0.5
         self.sleepy_rate = 0.05
 
         self.speed = random.uniform(200, 300)
         self.vision = random.uniform(80, 120)
+        self.bite_size = random.uniform(10,20)
         self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_carnivore, 0)  # generate
         # the event tree structure which human obeys.
         # animal size refers to the weight of the animal object, which is transfered to many objects in the world, when
@@ -480,7 +486,7 @@ class Carnivore(Animal):
 
     def get_target(self):
         target_list = []
-        for herbivore in self.world.herbivore_list:
+        for herbivore in self.world.food_herbivore_list:
             if herbivore not in self.world.searched_list:
                 target_list.append(herbivore)
         for human in self.world.human_list:
@@ -505,7 +511,7 @@ class Carnivore(Animal):
                 elif event_name == 'going_to':
                     self.going_to()
                 elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping',
-                                    'waking_up', 'getting_up','drinking','resting','peeling','cracking'}:
+                                    'waking_up', 'yawning','stretching', 'getting_up','drinking','resting','peeling','cracking'}:
                     self.do_it(event_name)
                 else:
                     self.hunt(event_name)
@@ -566,8 +572,9 @@ class Carnivore(Animal):
         else: # when hunting a human
             index = len(self.world.herbivore_category)
         success_rate = hunting_skill[event_name][index]
-        num = np.random.choice(2, 1, p=[1-success_rate, success_rate])
+        num = np.random.choice(2, 1, p=[1-success_rate, success_rate])[0]
         if num == 1:
+            self.hunt_success = self.hunt_success + 1
             self.event_dict[self.current_event][1] = 0
             exception = {'chasing'}
             if event_name not in exception:
@@ -578,6 +585,7 @@ class Carnivore(Animal):
                     self.world.human_list.remove(self.focus)
                     self.focus.alive = False
                 self.food_target.remove(self.focus)
+                #print(event_name, self.focus)
         else:
             self.event_dict[self.current_event][1] = -1
             self.world.searched_list.remove(self.focus)
@@ -594,6 +602,7 @@ class Herbivore(Animal):
         Animal.__init__(self, world, category)
         self.id_number = len(self.world.herbivore_list)
         self.animal_type = 'herbivore'
+        self.herbivore_type = self.world.noun_tax[category]
 
         self.hunger = random.uniform(0.5,0.7)
         self.sleepiness = random.uniform(0,0.5)
@@ -607,8 +616,13 @@ class Herbivore(Animal):
 
         self.speed = random.uniform(1, 5)
         self.vision = random.uniform(30, 60)
-        self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_herbivore, 0)  # generate
-        # the event tree structure which human obeys.
+        # the event tree structure which specific type of herbivores obeys.
+        if self.herbivore_type == 'herb_s': # for small herbivores
+            self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_herbivore_s, 0)
+        elif self.herbivore_type == 'herb_m': # for medium herbivores
+            self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_herbivore_m, 0)
+        else: # for large herbivores
+            self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_herbivore_l, 0)
         # animal size refers to the weight of the animal object, which is transfered to many objects in the world, when
         # animals are hunted and butchered, the animal objects are turned into certain amount of food, the amount of
         # food is determined by the size of the animal.
@@ -642,7 +656,7 @@ class Herbivore(Animal):
                 elif event_name == 'going_to':
                     self.going_to()
                 elif event_name in {'gathering', 'butchering', 'cooking', 'eating', 'laying_down', 'sleeping',
-                                    'waking_up', 'getting_up', 'drinking', 'resting', 'peeling', 'cracking'}:
+                                    'waking_up', 'yawning','stretching', 'getting_up', 'drinking', 'resting', 'peeling', 'cracking', 'reaching'}:
                     self.do_it(event_name)
                 self.generate_language(event_name) # generate the corresponding sentence for the ongoing simple event
             else :  # status 0 means event completed
@@ -662,7 +676,12 @@ class Herbivore(Animal):
                 l = len(self.world.herbivore_list)
                 if self.world.herbivore_list.index(self) == l - 1:
                     self.world.epoch = self.world.epoch + 1
-                self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_herbivore, 0)
+                if self.herbivore_type == 'herb_s':
+                    self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_herbivore_s, 0)
+                elif self.herbivore_type == 'herb_m':
+                    self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_herbivore_m, 0)
+                else:
+                    self.event_dict, self.event_tree = et.initialize_event_tree(config.World.event_tree_herbivore_l, 0)
                 self.focus = None
             else:  # event tree not completed, choose the child node to go and go to the child.
                 self.current_event = self.choose_heir()

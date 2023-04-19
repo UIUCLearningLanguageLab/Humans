@@ -5,6 +5,7 @@ shooting,0.5,0,0.5
 throwing_at,0.5,0,0.5
 stabbing,0.5,0,0.5
 going_to,1,0,1
+reaching,0.1,0,0.1
 searching,0.01,0,1
 resting,1,1,1
 gathering,0.1,0,0.1
@@ -14,8 +15,10 @@ eating,0,0,0
 laying_down,0,0,0
 sleeping,0.01,0,0
 waking_up,0,0,0
+yawning,0,0,0
+stretching,0,0,0
 getting_up,0,0,0
 drinking,0,0,0
 peeling,0.01,0,0
 cracking,0.02,0,0
-biting, 0.5,0,0.5
+catching,0.3,0,0.3
